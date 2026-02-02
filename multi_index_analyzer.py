@@ -29,20 +29,21 @@ class IndexAnalysisResult:
 class MultiIndexAnalyzer:
     """多指数分析器"""
     
-    def __init__(self, indexes: List[IndexConfig] = None, send_summary: bool = True):
+    def __init__(self, indexes: List[IndexConfig] = None, send_summary: bool = True, dingtalk_webhook: str = None):
         """
         初始化多指数分析器
         
         Args:
             indexes: 要分析的指数列表，如果为None则使用全局配置
             send_summary: 是否发送总结报告，默认True
+            dingtalk_webhook: 钉钉机器人webhook地址，默认None（使用环境变量或默认值）
         """
         self.indexes = indexes or index_manager.get_all_indexes()
         self.send_summary = send_summary
         self.data_collector = DataCollector()
         self.data_processor = DataProcessor()
         self.report_generator = ReportGenerator()
-        self.dingtalk_sender = DingTalkSender()
+        self.dingtalk_sender = DingTalkSender(webhook_url=dingtalk_webhook)
     
     def analyze_single_index(self, index_config: IndexConfig) -> IndexAnalysisResult:
         """

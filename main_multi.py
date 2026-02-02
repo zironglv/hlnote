@@ -38,9 +38,13 @@ def main():
         for idx in indexes:
             logger.info(f"- {idx.name} ({idx.code}): {idx.url}")
         
+        # 从环境变量获取钉钉Webhook URL
+        import os
+        dingtalk_webhook = os.getenv('DINGTALK_WEBHOOK')
+        
         # 运行多指数分析
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
-        analyzer = MultiIndexAnalyzer(indexes, send_summary=False)
+        analyzer = MultiIndexAnalyzer(indexes, send_summary=False, dingtalk_webhook=dingtalk_webhook)
         analysis_results, send_results = analyzer.run_full_analysis()
         
         # 输出结果统计
