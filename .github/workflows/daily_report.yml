@@ -47,13 +47,20 @@ jobs:
         echo "开始运行多指数分析..."
         python main_multi.py
         
-    - name: 上传报告作为artifact
+    - name: 上传报告目录作为artifact
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: daily-report-${{ github.run_number }}
+        name: daily-report-${{ github.run_number }}-reports
+        path: reports/
+        retention-days: 7
+        
+    - name: 上传日志文件作为artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: daily-report-${{ github.run_number }}-logs
         path: |
-          reports/**
           *.log
         retention-days: 7
         
