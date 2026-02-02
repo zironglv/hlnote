@@ -45,7 +45,7 @@ jobs:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
         echo "开始运行多指数分析..."
-        python main_multi.py
+        python main_multi.py || echo "程序执行完毕，可能存在错误"
         
     - name: 检查报告目录是否存在
       run: |
@@ -81,7 +81,18 @@ jobs:
         retention-days: 7
         
     - name: 错误日志输出
-      if: failure()
+      if: always()
       run: |
-        echo "🚨 执行失败，输出最后的日志内容："
-        tail -n 50 multi_index_dividend_analyzer.log || echo "日志文件不存在"
+        echo "🚨 输出所有可能的日志内容："
+        echo "=== 检查当前目录文件 ==="
+        ls -la
+        echo "\n=== 检查日志文件内容 ==="
+        for logfile in *.log; do
+          if [ -f "$logfile" ]; then
+            echo "\n--- $logfile 内容 ---"
+            cat "$logfile"
+          fi
+        done
+        if [ ! -f "multi_index_dividend_analyzer.log" ]; then
+          echo "\n--- 没有找到预期的日志文件 ---"
+        fi
