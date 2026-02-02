@@ -32,15 +32,19 @@ def main():
     try:
         logger.info("=== AI投研助手(多指数版)开始执行 ===")
         
+        # 检查钉钉Webhook配置
+        import os
+        dingtalk_webhook = os.getenv('DINGTALK_WEBHOOK')
+        if dingtalk_webhook:
+            logger.info("✅ 检测到 DINGTALK_WEBHOOK 环境变量")
+        else:
+            logger.warning("⚠️ 未找到 DINGTALK_WEBHOOK 环境变量，将使用默认Webhook")
+        
         # 获取所有配置的指数
         indexes = index_manager.get_all_indexes()
         logger.info(f"配置的指数数量: {len(indexes)}")
         for idx in indexes:
             logger.info(f"- {idx.name} ({idx.code}): {idx.url}")
-        
-        # 从环境变量获取钉钉Webhook URL
-        import os
-        dingtalk_webhook = os.getenv('DINGTALK_WEBHOOK')
         
         # 运行多指数分析
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
