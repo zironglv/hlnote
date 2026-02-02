@@ -47,17 +47,33 @@ jobs:
         echo "开始运行多指数分析..."
         python main_multi.py
         
+    - name: 检查报告目录是否存在
+      run: |
+        if [ -d "reports" ]; then
+          echo "REPORTS_EXIST=true" >> $GITHUB_ENV
+        else
+          echo "REPORTS_EXIST=false" >> $GITHUB_ENV
+        fi
+      
     - name: 上传报告目录作为artifact
       uses: actions/upload-artifact@v4
-      if: always()
+      if: env.REPORTS_EXIST == 'true'
       with:
         name: daily-report-${{ github.run_number }}-reports
         path: reports/
         retention-days: 7
         
+    - name: 检查日志文件是否存在
+      run: |
+        if [ -n "$(ls *.log 2>/dev/null)" ]; then
+          echo "LOGS_EXIST=true" >> $GITHUB_ENV
+        else
+          echo "LOGS_EXIST=false" >> $GITHUB_ENV
+        fi
+      
     - name: 上传日志文件作为artifact
       uses: actions/upload-artifact@v4
-      if: always()
+      if: env.LOGS_EXIST == 'true'
       with:
         name: daily-report-${{ github.run_number }}-logs
         path: |
