@@ -5,6 +5,7 @@
 import requests
 import json
 import logging
+import os
 from datetime import datetime
 import base64
 from typing import Optional
@@ -21,7 +22,8 @@ class DingTalkSender:
         Args:
             webhook_url: 钉钉机器人webhook地址
         """
-        self.webhook_url = webhook_url or "https://oapi.dingtalk.com/robot/send?access_token=0b782dbef56eba11d5f2f136e4247ad5fb3d3022653adb3acd37bdf060b7dfcf"
+        # 优先使用传入的URL，其次使用环境变量，最后使用默认值（仅用于测试）
+        self.webhook_url = webhook_url or os.getenv('DINGTALK_WEBHOOK') or "https://oapi.dingtalk.com/robot/send?access_token=0b782dbef56eba11d5f2f136e4247ad5fb3d3022653adb3acd37bdf060b7dfcf"
         
     def send_report(self, html_content: str, chart_path: str = None, index_info: dict = None, processed_data: dict = None) -> bool:
         """
