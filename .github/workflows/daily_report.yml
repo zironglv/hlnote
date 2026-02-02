@@ -12,7 +12,7 @@ jobs:
     
     steps:
     - name: Checkout代码
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: 设置Python环境
       uses: actions/setup-python@v4
@@ -48,7 +48,7 @@ jobs:
         python main_multi.py
         
     - name: 上传报告作为artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: daily-report-${{ github.run_number }}
