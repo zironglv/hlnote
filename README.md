@@ -53,7 +53,7 @@ cd 自动化测试
 ```
 
 ### 2. 钉钉机器人配置
-在钉钉群中添加自定义机器人，获取Webhook URL，并替换 `dingtalk_sender.py` 中的URL。
+在钉钉群中添加自定义机器人，获取Webhook URL，然后在 GitHub 仓库的 Settings → Secrets and variables → Actions 中添加 `DINGTALK_WEBHOOK` 变量。
 
 ### 3. （可选）自定义指数配置
 编辑 `index_config.py` 文件，添加或修改要分析的指数配置。
@@ -70,10 +70,15 @@ git push origin main
 ### 钉钉机器人配置
 1. 在钉钉群中添加自定义机器人
 2. 选择安全设置（建议使用关键词模式）
-3. 添加关键词：`AI投研助手`、`股息率`、`报告`
-4. 复制Webhook地址到代码中
+3. 添加关键词：`AI投研助手`、`股息率`、`报告`、`分析`、`投资`
+4. 复制Webhook地址，在 GitHub 仓库的 Settings → Secrets and variables → Actions 中设置 `DINGTALK_WEBHOOK`
 
-详细配置说明请查看 [config.md](config.md)
+### GitHub Actions 配置
+- 工作流文件：`.github/workflows/daily_report.yml`
+- 执行时间：每天 UTC 23:00（北京时间次日早上 7:00）
+- 支持手动触发：Actions 页面点击 "Run workflow"
+
+详细配置说明请查看 [config.md](config.md) 和 [DEPLOYMENT_CONFIG.md](DEPLOYMENT_CONFIG.md)
 
 ## 📅 执行时间
 
