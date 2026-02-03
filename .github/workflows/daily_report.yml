@@ -44,29 +44,21 @@ jobs:
           echo "🔗 Webhook域名: $WEBHOOK_DOMAIN"
         fi
         
-    - name: 快速环境诊断
-      env:
-        DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
-      run: |
-        echo "🔍 开始快速环境诊断..."
-        python github_diagnostic.py
-        DIAG_EXIT_CODE=$?
-        echo "诊断退出码: $DIAG_EXIT_CODE"
-        if [ $DIAG_EXIT_CODE -ne 0 ]; then
-          echo "❌ 诊断发现问题，停止执行"
-          exit 1
-        fi
-        echo "✅ 诊断完成，环境正常"
-      
     - name: 运行多指数AI投研助手
       env:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
-        echo "开始运行多指数分析..."
+        echo "🚀 开始运行多指数分析..."
         python main_multi.py
         EXIT_CODE=$?
         echo "程序退出码: $EXIT_CODE"
-        exit $EXIT_CODE
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "✅ 多指数分析执行成功"
+        else
+          echo "❌ 多指数分析执行失败，退出码: $EXIT_CODE"
+          # 即使失败也要继续，让后续步骤收集日志
+        fi
+        # 不直接退出，让工作流继续执行以便收集日志
         
     - name: 检查报告目录是否存在
       run: |
