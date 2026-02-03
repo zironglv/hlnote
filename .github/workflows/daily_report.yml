@@ -44,6 +44,14 @@ jobs:
           echo "🔗 Webhook域名: $WEBHOOK_DOMAIN"
         fi
         
+    - name: 深度环境诊断
+      env:
+        DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      run: |
+        echo "🔍 开始深度环境诊断..."
+        python deep_diagnostic.py
+        echo "✅ 诊断完成"
+      
     - name: 运行多指数AI投研助手
       env:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
