@@ -49,14 +49,18 @@ jobs:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
         echo "🚀 开始运行多指数分析..."
-        python main_multi.py
-        EXIT_CODE=$?
+        # 启用详细错误捕获
+        set -x  # 显示执行的每条命令
+        python main_multi.py 2>&1 | tee execution_log.txt
+        EXIT_CODE=${PIPESTATUS[0]}
+        set +x
         echo "程序退出码: $EXIT_CODE"
         if [ $EXIT_CODE -eq 0 ]; then
           echo "✅ 多指数分析执行成功"
         else
           echo "❌ 多指数分析执行失败，退出码: $EXIT_CODE"
-          # 即使失败也要继续，让后续步骤收集日志
+          echo "=== 详细错误日志 ==="
+          cat execution_log.txt
         fi
         # 不直接退出，让工作流继续执行以便收集日志
         
@@ -78,7 +82,7 @@ jobs:
         
     - name: 检查日志文件是否存在
       run: |
-        if [ -n "$(ls *.log 2>/dev/null)" ]; then
+        if [ -n "$(ls *.log 2>/dev/null)" ] || [ -f "execution_log.txt" ]; then
           echo "LOGS_EXIST=true" >> $GITHUB_ENV
         else
           echo "LOGS_EXIST=false" >> $GITHUB_ENV
@@ -91,6 +95,7 @@ jobs:
         name: daily-report-${{ github.run_number }}-logs
         path: |
           *.log
+          execution_log.txt
         retention-days: 7
         
     - name: 系统状态检查
