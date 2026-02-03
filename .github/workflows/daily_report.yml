@@ -33,8 +33,20 @@ jobs:
         pip install openpyxl
         # 安装xlrd用于读取.xls格式的Excel文件
         pip install xlrd>=2.0.1
-        # 验证字体安装
-        python -c "import matplotlib; matplotlib.font_manager._rebuild(); print('✅ 字体缓存已重建')"
+        # 验证字体安装和缓存
+        python -c "
+import matplotlib.font_manager
+import os
+# 重建字体缓存
+matplotlib.font_manager._rebuild()
+print('✅ 字体缓存已重建')
+# 检查中文字体
+fonts = matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
+chinese_fonts = [f for f in fonts if any(keyword in f.lower() for keyword in ['wqy', 'zenhei', 'microhei', 'songti', 'kaiti', 'heiti'])]
+print(f'✅ 找到 {len(chinese_fonts)} 个中文字体文件')
+if chinese_fonts:
+    print('中文字体示例:', chinese_fonts[:3])
+"
         
     - name: 配置环境变量
       run: |
