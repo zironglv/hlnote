@@ -35,11 +35,11 @@ def main():
     if dingtalk_webhook:
         from dingtalk_sender import DingTalkSender
         debug_sender = DingTalkSender(webhook_url=dingtalk_webhook)
-        # 发送启动通知
+        # 发送启动通知 - 添加钉钉机器人所需的关键词
         start_msg = {
             "msgtype": "text",
             "text": {
-                "content": "🚀 多指数AI投研助手开始运行 - 调试模式"
+                "content": "AI投研助手 股息率 报告 分析 投资 🚀 多指数AI投研助手开始运行 - 调试模式"
             }
         }
         try:
@@ -77,7 +77,7 @@ def main():
             msg = {
                 "msgtype": "text",
                 "text": {
-                    "content": system_info
+                    "content": f"AI投研助手 股息率 报告 分析 投资 {system_info}"
                 }
             }
             try:
@@ -93,7 +93,7 @@ def main():
                 msg = {
                     "msgtype": "text",
                     "text": {
-                        "content": webhook_info
+                        "content": f"AI投研助手 股息率 报告 分析 投资 {webhook_info}"
                     }
                 }
                 try:
@@ -107,7 +107,7 @@ def main():
                 msg = {
                     "msgtype": "text",
                     "text": {
-                        "content": warning_msg
+                        "content": f"AI投研助手 股息率 报告 分析 投资 {warning_msg}"
                     }
                 }
                 try:
@@ -120,7 +120,7 @@ def main():
             msg = {
                 "msgtype": "text",
                 "text": {
-                    "content": "🌐 节点2: 网络连通性检查"
+                    "content": "AI投研助手 股息率 报告 分析 投资 🌐 节点2: 网络连通性检查"
                 }
             }
             try:
@@ -137,7 +137,7 @@ def main():
                 msg = {
                     "msgtype": "text",
                     "text": {
-                        "content": network_status
+                        "content": f"AI投研助手 股息率 报告 分析 投资 {network_status}"
                     }
                 }
                 try:
