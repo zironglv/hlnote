@@ -84,6 +84,18 @@ jobs:
           *.log
         retention-days: 7
         
+    - name: 系统状态检查
+      if: always()
+      run: |
+        echo "🖥️ 系统信息:"
+        uname -a
+        echo "\n📦 Python环境:"
+        python --version
+        pip list | grep -E "(pandas|requests|matplotlib|openpyxl)"
+        echo "\n🌐 网络检查:"
+        curl -s -o /dev/null -w "%{http_code}" https://www.baidu.com && echo " 百度访问正常" || echo " 百度访问失败"
+        curl -s -o /dev/null -w "%{http_code}" https://oapi.dingtalk.com && echo " 钉钉API访问正常" || echo " 钉钉API访问失败"
+      
     - name: 错误日志输出
       if: always()
       run: |
@@ -94,9 +106,19 @@ jobs:
         for logfile in *.log; do
           if [ -f "$logfile" ]; then
             echo "\n--- $logfile 内容 ---"
-            cat "$logfile"
+            # 只显示最近50行，避免日志过长
+            tail -n 50 "$logfile"
           fi
         done
         if [ ! -f "multi_index_dividend_analyzer.log" ]; then
           echo "\n--- 没有找到预期的日志文件 ---"
+        fi
+        
+        # 检查是否有报告文件生成
+        echo "\n=== 检查报告文件 ==="
+        if [ -d "reports" ]; then
+          echo "报告目录存在:"
+          find reports -type f -name "*.html" -o -name "*.png" | head -10
+        else
+          echo "报告目录不存在"
         fi

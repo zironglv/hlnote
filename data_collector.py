@@ -43,8 +43,15 @@ class DataCollector:
             logger.info(f"开始获取CSV数据: {target_url}")
             
             # 发送HTTP请求
-            response = requests.get(target_url, timeout=self.timeout)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            response = requests.get(target_url, timeout=self.timeout, headers=headers)
             response.raise_for_status()  # 检查HTTP状态码
+            
+            # 检查响应内容大小
+            if len(response.content) < 1000:  # 最少应该有1KB
+                logger.warning(f"响应内容过短: {len(response.content)} 字节")
             
             # 判断文件格式并解析
             if target_url.endswith('.xls') or target_url.endswith('.xlsx'):

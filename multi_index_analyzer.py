@@ -141,6 +141,9 @@ class MultiIndexAnalyzer:
         """
         send_results = {}
         
+        # 检查钉钉发送器配置
+        logger.info(f"钉钉发送器配置检查 - Webhook URL: {self.dingtalk_sender.webhook_url[:50]}...")
+        
         for result in results:
             try:
                 if result.success:
@@ -151,6 +154,13 @@ class MultiIndexAnalyzer:
                         'code': result.index_config.code,
                         'description': result.index_config.description
                     }
+                    
+                    # 检查报告内容
+                    if not result.report_html or len(result.report_html.strip()) == 0:
+                        logger.warning(f"⚠️ {result.index_config.name} 报告内容为空，跳过发送")
+                        send_results[result.index_config.code] = False
+                        continue
+                    
                     success = self.dingtalk_sender.send_report(
                         result.report_html, 
                         result.chart_path,
@@ -169,7 +179,12 @@ class MultiIndexAnalyzer:
                     
             except Exception as e:
                 logger.error(f"发送 {result.index_config.name} 报告时出错: {str(e)}")
+                logger.exception("详细错误信息:")
                 send_results[result.index_config.code] = False
+        
+        # 统计发送结果
+        total_sent = len([r for r in send_results.values() if r])
+        logger.info(f"📊 发送统计: 成功 {total_sent}/{len(send_results)} 个报告")
         
         return send_results
     

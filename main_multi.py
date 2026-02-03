@@ -32,19 +32,48 @@ def main():
     try:
         logger.info("=== AI投研助手(多指数版)开始执行 ===")
         
-        # 检查钉钉Webhook配置
+        # 系统健康检查
         import os
+        import platform
+        logger.info(f"🖥️  系统信息: {platform.system()} {platform.release()}")
+        logger.info(f"🐍 Python版本: {platform.python_version()}")
+        
+        # 检查钉钉Webhook配置
         dingtalk_webhook = os.getenv('DINGTALK_WEBHOOK')
         if dingtalk_webhook:
-            logger.info("✅ 检测到 DINGTALK_WEBHOOK 环境变量")
+            logger.info(f"✅ 检测到 DINGTALK_WEBHOOK 环境变量 (长度: {len(dingtalk_webhook)} 字符)")
+            # 隐藏敏感信息，只显示域名部分
+            if 'access_token=' in dingtalk_webhook:
+                token_start = dingtalk_webhook.find('access_token=') + 13
+                token_end = min(token_start + 8, len(dingtalk_webhook))
+                masked_url = dingtalk_webhook[:token_start] + '...' + dingtalk_webhook[token_end:]
+                logger.info(f"🔗 Webhook URL: {masked_url}")
         else:
             logger.warning("⚠️ 未找到 DINGTALK_WEBHOOK 环境变量，将使用默认Webhook")
         
+        # 检查网络连通性
+        try:
+            import requests
+            response = requests.get('https://www.baidu.com', timeout=5)
+            logger.info("🌐 网络连接正常")
+        except Exception as e:
+            logger.warning(f"⚠️ 网络连接可能存在问题: {str(e)}")
+        
         # 获取所有配置的指数
         indexes = index_manager.get_all_indexes()
-        logger.info(f"配置的指数数量: {len(indexes)}")
+        logger.info(f"📊 配置的指数数量: {len(indexes)}")
         for idx in indexes:
             logger.info(f"- {idx.name} ({idx.code}): {idx.url}")
+        
+        # 测试钉钉连接
+        if dingtalk_webhook:
+            from dingtalk_sender import DingTalkSender
+            test_sender = DingTalkSender(webhook_url=dingtalk_webhook)
+            logger.info("🧪 测试钉钉机器人连接...")
+            if test_sender.test_connection():
+                logger.info("✅ 钉钉机器人连接测试成功")
+            else:
+                logger.error("❌ 钉钉机器人连接测试失败")
         
         # 运行多指数分析
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
