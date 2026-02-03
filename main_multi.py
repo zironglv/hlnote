@@ -42,7 +42,18 @@ def main():
                 "content": "🚀 多指数AI投研助手开始运行 - 调试模式"
             }
         }
-        debug_sender._send_message(start_msg)
+        try:
+            debug_sender._send_message(start_msg)
+        except Exception as e:
+            logger.warning(f"调试消息发送失败: {str(e)}")
+    
+    # 设置matplotlib后端以避免GUI相关问题
+    try:
+        import matplotlib
+        matplotlib.use('Agg')  # 使用非GUI后端
+        logger.info("📊 matplotlib后端设置为Agg")
+    except Exception as e:
+        logger.warning(f"matplotlib后端设置失败: {str(e)}")
     
     try:
         logger.info("=== AI投研助手(多指数版)开始执行 ===")
@@ -53,7 +64,10 @@ def main():
                     "content": "🔧 节点1: 程序启动和环境检查"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点1调试消息发送失败: {str(e)}")
         
         # 系统健康检查
         import platform
@@ -66,7 +80,10 @@ def main():
                     "content": system_info
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"系统信息调试消息发送失败: {str(e)}")
         
         # 检查钉钉Webhook配置
         if dingtalk_webhook:
@@ -79,7 +96,10 @@ def main():
                         "content": webhook_info
                     }
                 }
-                debug_sender._send_message(msg)
+                try:
+                    debug_sender._send_message(msg)
+                except Exception as e:
+                    logger.debug(f"Webhook信息调试消息发送失败: {str(e)}")
         else:
             warning_msg = "⚠️ 未找到 DINGTALK_WEBHOOK 环境变量"
             logger.warning(warning_msg)
@@ -90,7 +110,10 @@ def main():
                         "content": warning_msg
                     }
                 }
-                debug_sender._send_message(msg)
+                try:
+                    debug_sender._send_message(msg)
+                except Exception as e:
+                    logger.debug(f"警告信息调试消息发送失败: {str(e)}")
         
         # 节点2: 网络连通性检查
         if debug_sender:
@@ -100,7 +123,10 @@ def main():
                     "content": "🌐 节点2: 网络连通性检查"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点2调试消息发送失败: {str(e)}")
         
         try:
             import requests
@@ -114,7 +140,10 @@ def main():
                         "content": network_status
                     }
                 }
-                debug_sender._send_message(msg)
+                try:
+                    debug_sender._send_message(msg)
+                except Exception as e:
+                    logger.debug(f"网络状态调试消息发送失败: {str(e)}")
         except Exception as e:
             network_error = f"⚠️ 网络连接可能存在问题: {str(e)}"
             logger.warning(network_error)
@@ -125,7 +154,10 @@ def main():
                         "content": network_error
                     }
                 }
-                debug_sender._send_message(msg)
+                try:
+                    debug_sender._send_message(msg)
+                except Exception as e:
+                    logger.debug(f"网络错误调试消息发送失败: {str(e)}")
         
         # 节点3: 获取指数配置
         if debug_sender:
@@ -135,7 +167,10 @@ def main():
                     "content": "📊 节点3: 获取指数配置"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点3调试消息发送失败: {str(e)}")
         
         indexes = index_manager.get_all_indexes()
         config_info = f"📊 配置的指数数量: {len(indexes)}"
@@ -147,7 +182,10 @@ def main():
                     "content": config_info
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"配置信息调试消息发送失败: {str(e)}")
         
         for idx in indexes:
             logger.info(f"- {idx.name} ({idx.code}): {idx.url}")
@@ -160,7 +198,10 @@ def main():
                     "content": "🤖 节点4: 钉钉连接测试"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点4调试消息发送失败: {str(e)}")
         
         if dingtalk_webhook:
             test_sender = DingTalkSender(webhook_url=dingtalk_webhook)
@@ -175,7 +216,10 @@ def main():
                             "content": test_result
                         }
                     }
-                    debug_sender._send_message(msg)
+                    try:
+                        debug_sender._send_message(msg)
+                    except Exception as e:
+                        logger.debug(f"测试成功消息发送失败: {str(e)}")
             else:
                 test_result = "❌ 钉钉机器人连接测试失败"
                 logger.error(test_result)
@@ -186,7 +230,10 @@ def main():
                             "content": test_result
                         }
                     }
-                    debug_sender._send_message(msg)
+                    try:
+                        debug_sender._send_message(msg)
+                    except Exception as e:
+                        logger.debug(f"测试失败消息发送失败: {str(e)}")
         
         # 节点5: 运行多指数分析
         if debug_sender:
@@ -196,7 +243,10 @@ def main():
                     "content": "📈 节点5: 开始多指数分析"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点5调试消息发送失败: {str(e)}")
         
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
         analyzer = MultiIndexAnalyzer(indexes, send_summary=False, dingtalk_webhook=dingtalk_webhook)
@@ -210,7 +260,10 @@ def main():
                     "content": "📊 节点6: 分析结果统计"
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"节点6调试消息发送失败: {str(e)}")
         
         # 输出结果统计
         success_count = sum(1 for r in analysis_results if r.success)
@@ -225,7 +278,10 @@ def main():
                     "content": final_result
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"最终结果调试消息发送失败: {str(e)}")
         
         # 详细结果
         for result in analysis_results:
@@ -240,7 +296,10 @@ def main():
                         "content": result_msg
                     }
                 }
-                debug_sender._send_message(msg)
+                try:
+                    debug_sender._send_message(msg)
+                except Exception as e:
+                    logger.debug(f"结果信息调试消息发送失败: {str(e)}")
             if not result.success:
                 error_detail = f"  错误: {result.error_message}"
                 logger.error(error_detail)
@@ -251,7 +310,10 @@ def main():
                             "content": f"❌ {result.index_config.name}: {result.error_message}"
                         }
                     }
-                    debug_sender._send_message(msg)
+                    try:
+                        debug_sender._send_message(msg)
+                    except Exception as e:
+                        logger.debug(f"错误信息调试消息发送失败: {str(e)}")
                 
     except Exception as e:
         error_msg = f"❌ 程序执行出错: {str(e)}"
@@ -263,7 +325,10 @@ def main():
                     "content": error_msg
                 }
             }
-            debug_sender._send_message(msg)
+            try:
+                debug_sender._send_message(msg)
+            except Exception as e:
+                logger.debug(f"错误消息调试发送失败: {str(e)}")
         raise
 
 def add_custom_index(name: str, code: str, url: str, description: str = ""):
