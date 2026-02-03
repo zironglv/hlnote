@@ -35,35 +35,72 @@ def main():
     if dingtalk_webhook:
         from dingtalk_sender import DingTalkSender
         debug_sender = DingTalkSender(webhook_url=dingtalk_webhook)
-        debug_sender.send_text_message("🚀 多指数AI投研助手开始运行 - 调试模式")
+        # 发送启动通知
+        start_msg = {
+            "msgtype": "text",
+            "text": {
+                "content": "🚀 多指数AI投研助手开始运行 - 调试模式"
+            }
+        }
+        debug_sender._send_message(start_msg)
     
     try:
         logger.info("=== AI投研助手(多指数版)开始执行 ===")
         if debug_sender:
-            debug_sender.send_text_message("🔧 节点1: 程序启动和环境检查")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "🔧 节点1: 程序启动和环境检查"
+                }
+            }
+            debug_sender._send_message(msg)
         
         # 系统健康检查
         import platform
         system_info = f"🖥️ 系统: {platform.system()} {platform.release()}, Python: {platform.python_version()}"
         logger.info(system_info)
         if debug_sender:
-            debug_sender.send_text_message(system_info)
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": system_info
+                }
+            }
+            debug_sender._send_message(msg)
         
         # 检查钉钉Webhook配置
         if dingtalk_webhook:
             webhook_info = f"✅ 检测到 DINGTALK_WEBHOOK (长度: {len(dingtalk_webhook)} 字符)"
             logger.info(webhook_info)
             if debug_sender:
-                debug_sender.send_text_message(webhook_info)
+                msg = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": webhook_info
+                    }
+                }
+                debug_sender._send_message(msg)
         else:
             warning_msg = "⚠️ 未找到 DINGTALK_WEBHOOK 环境变量"
             logger.warning(warning_msg)
             if debug_sender:
-                debug_sender.send_text_message(warning_msg)
+                msg = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": warning_msg
+                    }
+                }
+                debug_sender._send_message(msg)
         
         # 节点2: 网络连通性检查
         if debug_sender:
-            debug_sender.send_text_message("🌐 节点2: 网络连通性检查")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "🌐 节点2: 网络连通性检查"
+                }
+            }
+            debug_sender._send_message(msg)
         
         try:
             import requests
@@ -71,29 +108,59 @@ def main():
             network_status = "🌐 网络连接正常"
             logger.info(network_status)
             if debug_sender:
-                debug_sender.send_text_message(network_status)
+                msg = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": network_status
+                    }
+                }
+                debug_sender._send_message(msg)
         except Exception as e:
             network_error = f"⚠️ 网络连接可能存在问题: {str(e)}"
             logger.warning(network_error)
             if debug_sender:
-                debug_sender.send_text_message(network_error)
+                msg = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": network_error
+                    }
+                }
+                debug_sender._send_message(msg)
         
         # 节点3: 获取指数配置
         if debug_sender:
-            debug_sender.send_text_message("📊 节点3: 获取指数配置")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "📊 节点3: 获取指数配置"
+                }
+            }
+            debug_sender._send_message(msg)
         
         indexes = index_manager.get_all_indexes()
         config_info = f"📊 配置的指数数量: {len(indexes)}"
         logger.info(config_info)
         if debug_sender:
-            debug_sender.send_text_message(config_info)
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": config_info
+                }
+            }
+            debug_sender._send_message(msg)
         
         for idx in indexes:
             logger.info(f"- {idx.name} ({idx.code}): {idx.url}")
         
         # 节点4: 钉钉连接测试
         if debug_sender:
-            debug_sender.send_text_message("🤖 节点4: 钉钉连接测试")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "🤖 节点4: 钉钉连接测试"
+                }
+            }
+            debug_sender._send_message(msg)
         
         if dingtalk_webhook:
             test_sender = DingTalkSender(webhook_url=dingtalk_webhook)
@@ -102,16 +169,34 @@ def main():
                 test_result = "✅ 钉钉机器人连接测试成功"
                 logger.info(test_result)
                 if debug_sender:
-                    debug_sender.send_text_message(test_result)
+                    msg = {
+                        "msgtype": "text",
+                        "text": {
+                            "content": test_result
+                        }
+                    }
+                    debug_sender._send_message(msg)
             else:
                 test_result = "❌ 钉钉机器人连接测试失败"
                 logger.error(test_result)
                 if debug_sender:
-                    debug_sender.send_text_message(test_result)
+                    msg = {
+                        "msgtype": "text",
+                        "text": {
+                            "content": test_result
+                        }
+                    }
+                    debug_sender._send_message(msg)
         
         # 节点5: 运行多指数分析
         if debug_sender:
-            debug_sender.send_text_message("📈 节点5: 开始多指数分析")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "📈 节点5: 开始多指数分析"
+                }
+            }
+            debug_sender._send_message(msg)
         
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
         analyzer = MultiIndexAnalyzer(indexes, send_summary=False, dingtalk_webhook=dingtalk_webhook)
@@ -119,7 +204,13 @@ def main():
         
         # 节点6: 结果统计
         if debug_sender:
-            debug_sender.send_text_message("📊 节点6: 分析结果统计")
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": "📊 节点6: 分析结果统计"
+                }
+            }
+            debug_sender._send_message(msg)
         
         # 输出结果统计
         success_count = sum(1 for r in analysis_results if r.success)
@@ -128,7 +219,13 @@ def main():
         final_result = f"=== 分析完成 ===\n成功分析: {success_count}/{len(indexes)} 个指数\n成功发送: {sent_count}/{len(indexes)} 个报告"
         logger.info(final_result)
         if debug_sender:
-            debug_sender.send_text_message(final_result)
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": final_result
+                }
+            }
+            debug_sender._send_message(msg)
         
         # 详细结果
         for result in analysis_results:
@@ -137,18 +234,36 @@ def main():
             result_msg = f"{status} {sent_status} {result.index_config.name}"
             logger.info(result_msg)
             if debug_sender:
-                debug_sender.send_text_message(result_msg)
+                msg = {
+                    "msgtype": "text",
+                    "text": {
+                        "content": result_msg
+                    }
+                }
+                debug_sender._send_message(msg)
             if not result.success:
                 error_detail = f"  错误: {result.error_message}"
                 logger.error(error_detail)
                 if debug_sender:
-                    debug_sender.send_text_message(f"❌ {result.index_config.name}: {result.error_message}")
+                    msg = {
+                        "msgtype": "text",
+                        "text": {
+                            "content": f"❌ {result.index_config.name}: {result.error_message}"
+                        }
+                    }
+                    debug_sender._send_message(msg)
                 
     except Exception as e:
         error_msg = f"❌ 程序执行出错: {str(e)}"
         logger.error(error_msg)
         if debug_sender:
-            debug_sender.send_text_message(error_msg)
+            msg = {
+                "msgtype": "text",
+                "text": {
+                    "content": error_msg
+                }
+            }
+            debug_sender._send_message(msg)
         raise
 
 def add_custom_index(name: str, code: str, url: str, description: str = ""):
