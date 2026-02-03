@@ -107,12 +107,19 @@ class ReportGenerator:
             ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
             plt.xticks(rotation=45)
             
-            # 添加数值标签
-            for i, (date, rate) in enumerate(zip(dates, rates)):
-                ax.annotate(f'{rate:.4f}', (date, rate), 
-                           textcoords="offset points", xytext=(0,10), ha='center',
-                           fontsize=9, color='#2E86AB')
+            # 调整Y轴范围，避免标签被截断
+            y_min, y_max = rates.min(), rates.max()
+            y_range = y_max - y_min
+            ax.set_ylim(y_min - y_range * 0.1, y_max + y_range * 0.15)
             
+            # 添加数值标签（优化位置，避免重叠）
+            for i, (date, rate) in enumerate(zip(dates, rates)):
+                # 根据位置调整标签位置
+                offset_y = 10 if i % 2 == 0 else -15
+                ax.annotate(f'{rate:.3f}', (date, rate), 
+                           textcoords="offset points", xytext=(0, offset_y), ha='center',
+                           fontsize=8, color='#2E86AB',
+                           bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8, edgecolor='none'))            
             # 调整布局
             plt.tight_layout()
             
@@ -171,6 +178,7 @@ class ReportGenerator:
                 .metric-card {{ background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
                 .metric-value {{ font-size: 24px; font-weight: bold; color: #2E86AB; }}
                 .metric-label {{ font-size: 14px; color: #666; margin-top: 5px; }}
+                .metric-subtext {{ font-size: 12px; color: #888; margin-top: 2px; }}
                 .chart-container {{ text-align: center; margin: 30px 0; }}
                 .chart-container img {{ max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }}
                 .analysis {{ background: #e8f4f8; border-left: 4px solid #2E86AB; padding: 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }}
@@ -215,6 +223,16 @@ class ReportGenerator:
                             <div class="metric-value">{metrics.get('percentile_15d', 0):.1f}%</div>
                             <div class="metric-label">历史分位数</div>
                         </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{self._format_metric(metrics.get('bond_yield'), 'N/A', '.2f')}%</div>
+                            <div class="metric-label">国债收益率</div>
+                            {'<div class="metric-subtext">10年期</div>' if metrics.get('bond_name') else ''}
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{self._format_metric(metrics.get('dividend_bond_spread'), 'N/A', '.2f')}%</div>
+                            <div class="metric-label">股息率溢价</div>
+                            {'<div class="metric-subtext">' + ('优势' if metrics.get('dividend_bond_spread', 0) > 0 else '劣势') + '</div>' if metrics.get('dividend_bond_spread') is not None else ''}
+                        </div>
                     </div>
                     
                     <div class="analysis">
@@ -231,12 +249,29 @@ class ReportGenerator:
                     </div>
                     
                     <div class="analysis">
-                        <h3>💡 投资参考</h3>
+                        <h3>💡 多指标综合分析</h3>
                         <ul>
-                            <li>当前股息率相对15日均值{'偏高' if metrics.get('current_rate', 0) > metrics.get('avg_15d', 0) else '偏低'}</li>
-                            <li>历史分位数为{metrics.get('percentile_15d', 0):.1f}%，处于{'较高' if metrics.get('percentile_15d', 50) > 70 else '较低' if metrics.get('percentile_15d', 50) < 30 else '中等'}水平</li>
-                            <li>建议结合其他技术指标和基本面分析做投资决策</li>
+                            <li>股息率分析：当前股息率相对15日均值{'偏高' if metrics.get('current_rate', 0) > metrics.get('avg_15d', 0) else '偏低'}，历史分位数为{metrics.get('percentile_15d', 0):.1f}%，处于{'较高' if metrics.get('percentile_15d', 50) > 70 else '较低' if metrics.get('percentile_15d', 50) < 30 else '中等'}水平</li>
+                            {'<li>估值分析：PE估值' + ('较低' if metrics.get('pe', 20) < 15 else '较高' if metrics.get('pe', 20) > 25 else '合理') + f'({metrics.get("pe", "N/A")}倍)，PB估值' + ('较低' if metrics.get('pb', 1.5) < 1.2 else '较高' if metrics.get('pb', 1.5) > 2.0 else '合理') + f'({metrics.get("pb", "N/A")}倍)</li>' if metrics.get('pe') or metrics.get('pb') else ''}
+                            {'<li>国债对比：股息率相对10年期国债收益率' + ('有显著优势' if metrics.get('dividend_bond_spread', 0) > 1.0 else '基本相当' if metrics.get('dividend_bond_spread', 0) > 0 else '处于劣势') + f'(差额{metrics.get("dividend_bond_spread", 0):.2f}%)</li>' if metrics.get('dividend_bond_spread') is not None else ''}
                         </ul>
+                    </div>
+                    
+                    <div class="analysis" style="background: #e8f4f8; border-left: 4px solid #2E86AB;">
+                        <h3>🎯 投资决策建议</h3>
+                        {'<div style="margin: 15px 0;">' + 
+                         '<div style="font-size: 20px; font-weight: bold; color: ' + ('#28a745' if metrics.get('investment_advice', {}).get('action') == '买入' else '#ffc107' if metrics.get('investment_advice', {}).get('action') == '持有' else '#dc3545') + '; margin-bottom: 10px;">' +
+                         ('🟢 建议买入' if metrics.get('investment_advice', {}).get('action') == '买入' else '🟡 建议持有' if metrics.get('investment_advice', {}).get('action') == '持有' else '🔴 建议卖出') + '</div>' +
+                         '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">' +
+                         '<strong>信心度：</strong>' + f'{metrics.get("investment_advice", {}).get("confidence", 0.5):.1%}' + '<br>' +
+                         '<div style="background: #e9ecef; height: 10px; border-radius: 5px; margin: 5px 0 10px 0; overflow: hidden;">' +
+                         '<div style="background: ' + ('#28a745' if metrics.get('investment_advice', {}).get('action') == '买入' else '#ffc107' if metrics.get('investment_advice', {}).get('action') == '持有' else '#dc3545') + f'; width: {metrics.get("investment_advice", {}).get("confidence", 0.5) * 100}%; height: 100%;"></div>' +
+                         '</div>' +
+                         '<strong>理由：</strong>' + (', '.join(metrics.get('investment_advice', {}).get('reasons', ['基于综合分析'])) if metrics.get('investment_advice', {}).get('reasons') else '基于综合分析') + '<br>' +
+                         '<strong>风险：</strong>' + (', '.join(metrics.get('investment_advice', {}).get('risks', ['市场波动风险'])) if metrics.get('investment_advice', {}).get('risks') else '市场波动风险') + '<br>' +
+                         '<strong>摘要：</strong>' + metrics.get('investment_advice', {}).get('summary', '建议结合个人风险承受能力做投资决策') +
+                         '</div>' +
+                         '</div>' if metrics.get('investment_advice') else '<p>投资决策建议生成中...</p>'}
                     </div>
                 </div>
                 
@@ -279,3 +314,137 @@ class ReportGenerator:
             analysis_parts.append(f"日内{direction}{abs(change):.2f}%")
         
         return "，".join(analysis_parts) + "。"
+    
+    def _format_metric(self, value, default='N/A', format_spec=''):
+        """格式化指标值，处理None和异常"""
+        if value is None:
+            return default
+        try:
+            if format_spec:
+                return format(value, format_spec)
+            return str(value)
+        except (ValueError, TypeError):
+            return default
+    
+    def generate_daily_report(self, analysis_data: Dict, chart_path: str = None) -> str:
+        """
+        生成日报简洁版（用于钉钉消息等场景）
+        
+        Args:
+            analysis_data: 分析数据字典
+            chart_path: 图表路径（可选）
+            
+        Returns:
+            str: 日报简洁版HTML内容
+        """
+        metrics = analysis_data.get('metrics', {})
+        index_info = analysis_data.get('index_info', {})
+        
+        # 获取投资建议
+        investment_advice = metrics.get('investment_advice', {})
+        if isinstance(investment_advice, dict):
+            action = investment_advice.get('action', '持有')
+            confidence = investment_advice.get('confidence', 0.5)
+            summary = investment_advice.get('summary', '')
+        else:
+            action = '持有'
+            confidence = 0.5
+            summary = ''
+        
+        # 趋势箭头
+        change_percent = metrics.get('change_percent', 0)
+        if isinstance(change_percent, str):
+            try:
+                change_percent = float(change_percent.replace('+', '').replace('%', ''))
+            except:
+                change_percent = 0
+        
+        trend_arrow = '📈' if change_percent > 0 else '📉' if change_percent < 0 else '➡️'
+        
+        html_template = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>AI投研日报 - 简洁版</title>
+            <style>
+                body {{ font-family: 'Microsoft YaHei', Arial, sans-serif; margin: 0; padding: 15px; background-color: #f8f9fa; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }}
+                .header {{ background: linear-gradient(135deg, #2E86AB 0%, #A23B72 100%); color: white; padding: 20px; text-align: center; }}
+                .header h1 {{ margin: 0; font-size: 20px; }}
+                .header p {{ margin: 5px 0 0 0; opacity: 0.9; font-size: 14px; }}
+                .content {{ padding: 20px; }}
+                .metrics-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 0; }}
+                .metric-card {{ background: #f8f9fa; border-radius: 6px; padding: 15px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+                .metric-value {{ font-size: 18px; font-weight: bold; color: #2E86AB; }}
+                .metric-label {{ font-size: 12px; color: #666; margin-top: 3px; }}
+                .advice-section {{ background: #e8f4f8; border-radius: 8px; padding: 15px; margin: 15px 0; }}
+                .advice-title {{ font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #2E86AB; }}
+                .advice-action {{ font-size: 24px; font-weight: bold; margin: 10px 0; }}
+                .buy {{ color: #28a745; }}
+                .hold {{ color: #ffc107; }}
+                .sell {{ color: #dc3545; }}
+                .confidence-bar {{ background: #e9ecef; height: 8px; border-radius: 4px; margin: 8px 0; overflow: hidden; }}
+                .confidence-fill {{ height: 100%; }}
+                .footer {{ text-align: center; padding: 15px; color: #666; font-size: 11px; border-top: 1px solid #eee; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>📊 AI投研日报</h1>
+                    <p>{index_info.get('name', '中证指数')} | {analysis_data.get('analysis_time', '')}</p>
+                </div>
+                
+                <div class="content">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value">{metrics.get('current_rate', 0):.2f}% {trend_arrow}</div>
+                            <div class="metric-label">股息率</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{metrics.get('pe', 'N/A') if metrics.get('pe') else 'N/A'}</div>
+                            <div class="metric-label">PE估值</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{metrics.get('pb', 'N/A') if metrics.get('pb') else 'N/A'}</div>
+                            <div class="metric-label">PB估值</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">{metrics.get('dividend_bond_spread', 'N/A') if metrics.get('dividend_bond_spread') else 'N/A'}%</div>
+                            <div class="metric-label">国债溢价</div>
+                        </div>
+                    </div>
+                    
+                    <div class="advice-section">
+                        <div class="advice-title">🎯 投资建议</div>
+                        <div class="advice-action {action}">
+                            {'🟢 建议买入' if action == '买入' else '🟡 建议持有' if action == '持有' else '🔴 建议卖出'}
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <div style="font-size: 14px; margin-bottom: 5px;">信心度: {confidence:.1%}</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: {confidence * 100}%; background: {'#28a745' if action == '买入' else '#ffc107' if action == '持有' else '#dc3545'};"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 13px; line-height: 1.4;">
+                            {summary if summary else '基于多指标综合分析'}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 15px 0; font-size: 12px; color: #666;">
+                        💡 点击查看完整分析报告，获取详细图表和历史数据
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <p>AI投研助手自动生成 | 数据仅供参考，投资有风险</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html_template

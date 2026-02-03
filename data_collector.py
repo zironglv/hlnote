@@ -1,13 +1,16 @@
 """
-数据收集模块 - 负责从网络获取CSV数据
+数据收集模块 - 负责从网络获取CSV数据、估值数据和国债收益率数据
 """
 
 import requests
 import pandas as pd
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 import io
 import os
+import akshare as ak
+import json
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +109,193 @@ class DataCollector:
         except Exception as e:
             logger.error(f"数据获取过程中发生未知错误: {str(e)}")
             raise Exception(f"数据获取失败: {str(e)}")
+    
+    def fetch_valuation_data(self, index_code: str) -> Dict[str, Any]:
+        """
+        获取指数估值数据（PE/PB）
+        
+        Args:
+            index_code: 指数代码
+            
+        Returns:
+            Dict: 包含PE/PB估值数据的字典
+        """
+        try:
+            logger.info(f"开始获取指数 {index_code} 的估值数据")
+            
+            # 使用AKShare获取指数估值数据
+            # 注意：这里可能需要根据实际指数代码调整
+            if index_code.startswith('sh') or index_code.startswith('sz'):
+                # 如果是股票代码格式，使用股票估值接口
+                valuation_df = ak.stock_a_indicator_lg(symbol=index_code)
+            else:
+                # 尝试使用指数估值接口
+                try:
+                    valuation_df = ak.index_value_hist_funddb(symbol=index_code)
+                except:
+                    # 如果失败，尝试其他接口
+                    valuation_df = ak.index_value_hist_cni(symbol=index_code)
+            
+            if valuation_df.empty:
+                logger.warning(f"未找到指数 {index_code} 的估值数据")
+                return {
+                    'pe': None,
+                    'pb': None,
+                    'pe_percentile': None,
+                    'pb_percentile': None,
+                    'pe_history': [],
+                    'pb_history': []
+                }
+            
+            # 提取最新数据
+            latest_data = valuation_df.iloc[0]
+            
+            # 尝试不同的列名
+            pe_value = None
+            pb_value = None
+            
+            for pe_col in ['pe_ttm', 'pe', '市盈率', 'PE']:
+                if pe_col in latest_data:
+                    pe_value = float(latest_data[pe_col])
+                    break
+            
+            for pb_col in ['pb', '市净率', 'PB']:
+                if pb_col in latest_data:
+                    pb_value = float(latest_data[pb_col])
+                    break
+            
+            # 计算历史分位数（如果有历史数据）
+            pe_percentile = None
+            pb_percentile = None
+            
+            if 'pe' in valuation_df.columns and len(valuation_df) > 10:
+                current_pe = pe_value if pe_value else valuation_df['pe'].iloc[0]
+                pe_percentile = (valuation_df['pe'] <= current_pe).sum() / len(valuation_df) * 100
+                
+            if 'pb' in valuation_df.columns and len(valuation_df) > 10:
+                current_pb = pb_value if pb_value else valuation_df['pb'].iloc[0]
+                pb_percentile = (valuation_df['pb'] <= current_pb).sum() / len(valuation_df) * 100
+            
+            logger.info(f"指数 {index_code} 估值数据获取成功: PE={pe_value}, PB={pb_value}")
+            
+            return {
+                'pe': pe_value,
+                'pb': pb_value,
+                'pe_percentile': pe_percentile,
+                'pb_percentile': pb_percentile,
+                'pe_history': valuation_df['pe'].tolist()[:30] if 'pe' in valuation_df.columns else [],
+                'pb_history': valuation_df['pb'].tolist()[:30] if 'pb' in valuation_df.columns else []
+            }
+            
+        except Exception as e:
+            logger.error(f"获取估值数据失败: {str(e)}")
+            return {
+                'pe': None,
+                'pb': None,
+                'pe_percentile': None,
+                'pb_percentile': None,
+                'pe_history': [],
+                'pb_history': []
+            }
+    
+    def fetch_bond_yield(self, bond_type: str = "10y") -> Dict[str, Any]:
+        """
+        获取国债收益率数据
+        
+        Args:
+            bond_type: 债券类型，支持 '10y'(10年期), '5y'(5年期), '1y'(1年期)
+            
+        Returns:
+            Dict: 包含国债收益率数据的字典
+        """
+        try:
+            logger.info(f"开始获取{bond_type}国债收益率数据")
+            
+            # 使用AKShare获取国债收益率数据
+            bond_yield_df = ak.bond_china_yield()
+            
+            if bond_yield_df.empty:
+                logger.warning("未找到国债收益率数据")
+                return {
+                    'current_yield': None,
+                    'yield_history': [],
+                    'yield_change': None,
+                    'date': None
+                }
+            
+            # 根据债券类型筛选数据
+            bond_mapping = {
+                '10y': '10年',
+                '5y': '5年', 
+                '1y': '1年'
+            }
+            
+            bond_name = bond_mapping.get(bond_type, '10年')
+            
+            # 检查列名，AKShare的列名可能有变化
+            column_name = None
+            for col in bond_yield_df.columns:
+                if '名称' in col or 'name' in col.lower():
+                    column_name = col
+                    break
+            
+            if column_name:
+                bond_data = bond_yield_df[bond_yield_df[column_name].astype(str).str.contains(bond_name)]
+            else:
+                # 如果没有找到名称列，使用第一列
+                bond_data = bond_yield_df[bond_yield_df.iloc[:, 0].astype(str).str.contains(bond_name)]
+            
+            if bond_data.empty:
+                logger.warning(f"未找到{bond_name}国债收益率数据")
+                return {
+                    'current_yield': None,
+                    'yield_history': [],
+                    'yield_change': None,
+                    'date': None
+                }
+            
+            # 获取最新数据
+            latest_data = bond_data.iloc[0]
+            current_yield = float(latest_data['收益率'])
+            date_str = latest_data['日期']
+            
+            # 获取历史数据（最近30天）
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+            
+            # 尝试获取历史数据
+            try:
+                history_df = ak.bond_china_yield(start_date=start_date.strftime('%Y%m%d'), 
+                                                end_date=end_date.strftime('%Y%m%d'))
+                history_data = history_df[history_df['债券名称'].str.contains(bond_name)]
+                yield_history = history_data['收益率'].tolist() if not history_data.empty else []
+            except:
+                yield_history = []
+            
+            # 计算变化（如果有历史数据）
+            yield_change = None
+            if len(yield_history) >= 2:
+                yield_change = current_yield - yield_history[1]
+            
+            logger.info(f"国债收益率数据获取成功: {bond_name}={current_yield}%")
+            
+            return {
+                'current_yield': current_yield,
+                'yield_history': yield_history,
+                'yield_change': yield_change,
+                'date': date_str,
+                'bond_name': bond_name
+            }
+            
+        except Exception as e:
+            logger.error(f"获取国债收益率数据失败: {str(e)}")
+            return {
+                'current_yield': None,
+                'yield_history': [],
+                'yield_change': None,
+                'date': None,
+                'bond_name': bond_type
+            }
     
     def validate_data(self, df: pd.DataFrame) -> bool:
         """

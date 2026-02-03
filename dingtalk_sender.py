@@ -41,9 +41,8 @@ class DingTalkSender:
         try:
             logger.info("开始发送钉钉消息...")
             
-            # 构造钉钉消息
-            message = self._build_dingtalk_message(html_content, chart_path, index_info, processed_data)
-            
+                    # 构造钉钉消息（使用日报简洁版）
+                    message = self._build_dingtalk_message(html_content, chart_path, index_info, processed_data)            
             # 发送消息
             success = self._send_message(message)
             
@@ -83,26 +82,29 @@ class DingTalkSender:
         if index_code:
             title += f" ({index_code})"
         
-        # 构造Markdown消息
-        markdown_content = f"""
-## {title}
-
-📊 **核心指标**
-- 当前股息率: **{metrics.get('current_rate', 'N/A')}%**
-- 15日均值: **{metrics.get('avg_15d', 'N/A')}%**
-- 历史范围: **{metrics.get('min_15d', 'N/A')}%** ~ **{metrics.get('max_15d', 'N/A')}%**
-- 日变化: **{metrics.get('change_percent', 'N/A')}%**
-- 历史分位数: **{metrics.get('percentile_15d', 'N/A')}%**
-
-🎯 **趋势分析**
-{metrics.get('trend_analysis', '数据不足，无法进行趋势分析')}
-
-💡 **投资参考**
-{metrics.get('investment_advice', '建议结合其他技术指标和基本面分析做投资决策')}
-
----
-📈 *AI投研助手自动推送*
-"""
+        # 使用ReportGenerator生成日报简洁版HTML
+        from report_generator import ReportGenerator
+        report_generator = ReportGenerator()
+        daily_report_html = report_generator.generate_daily_report({
+            'metrics': metrics,
+            'index_info': index_info,
+            'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+        # 构造Markdown消息（双层级日报格式）
+        markdown_content = self._build_daily_report_markdown(title, metrics, index_info, processed_data)
+        
+        # 保存日报简洁版到文件
+        try:
+            import os
+            report_dir = "reports/daily"
+            os.makedirs(report_dir, exist_ok=True)
+            daily_report_path = os.path.join(report_dir, f"daily_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
+            with open(daily_report_path, 'w', encoding='utf-8') as f:
+                f.write(daily_report_html)
+            logger.info(f"日报简洁版已保存: {daily_report_path}")
+        except Exception as e:
+            logger.warning(f"保存日报简洁版失败: {str(e)}")
         
         message = {
             "msgtype": "markdown",
@@ -250,6 +252,172 @@ class DingTalkSender:
         except Exception as e:
             logger.error(f"钉钉机器人连接测试异常: {str(e)}")
             return False
+
+    def _build_daily_report_markdown(self, title: str, metrics: dict, index_info: dict = None, processed_data: dict = None) -> str:
+        """
+        构建日报格式的Markdown消息（包含国债收益率对比）
+        
+        Args:
+            title: 消息标题
+            metrics: 指标数据
+            index_info: 指数信息
+            processed_data: 处理后的数据
+            
+        Returns:
+            str: Markdown格式的消息内容
+        """
+        # 获取投资建议
+        investment_advice = metrics.get('investment_advice', {})
+        if isinstance(investment_advice, dict):
+            action = investment_advice.get('action', '持有')
+            confidence = investment_advice.get('confidence', 0.5)
+            summary = investment_advice.get('summary', '')
+        else:
+            action = '持有'
+            confidence = 0.5
+            summary = ''
+        
+        # 获取指数名称和代码
+        index_name = index_info.get('name', '未知指数') if index_info else '中证红利低波指数'
+        index_code = index_info.get('code', '') if index_info else ''
+        
+        # 构造趋势箭头
+        change_percent = metrics.get('change_percent', 0)
+        if isinstance(change_percent, str):
+            try:
+                change_percent = float(change_percent.replace('+', '').replace('%', ''))
+            except:
+                change_percent = 0
+        
+        trend_arrow = '📈' if change_percent > 0 else '📉' if change_percent < 0 else '➡️'
+        
+        # 获取估值数据
+        pe = metrics.get('pe')
+        pb = metrics.get('pb')
+        pe_percentile = metrics.get('pe_percentile')
+        pb_percentile = metrics.get('pb_percentile')
+        
+        # 获取国债收益率对比数据
+        bond_yield = metrics.get('bond_yield')
+        dividend_bond_spread = metrics.get('dividend_bond_spread')
+        
+        # 构建核心指标卡片
+        core_metrics_section = f"""
+📊 **核心指标卡片**
+- 股息率: **{metrics.get('current_rate', 'N/A')}%** {trend_arrow} {metrics.get('change_percent', 'N/A')}%
+- PE估值: **{pe if pe is not None else 'N/A'}倍** {'(低位)' if pe_percentile and pe_percentile < 30 else '(高位)' if pe_percentile and pe_percentile > 70 else ''}
+- PB估值: **{pb if pb is not None else 'N/A'}倍** {'(低位)' if pb_percentile and pb_percentile < 30 else '(高位)' if pb_percentile and pb_percentile > 70 else ''}
+- 国债对比: **{dividend_bond_spread if dividend_bond_spread is not None else 'N/A'}%** {'📈' if dividend_bond_spread and dividend_bond_spread > 0 else '📉' if dividend_bond_spread and dividend_bond_spread < 0 else '➡️'}
+"""
+        
+        # 构建趋势分析
+        trend_section = f"""
+🎯 **趋势分析**
+- 股息率历史分位数: **{metrics.get('percentile_15d', 'N/A')}%** {'(高位)' if metrics.get('percentile_15d', 50) > 70 else '(低位)' if metrics.get('percentile_15d', 50) < 30 else '(中位)'}
+- 15日范围: **{metrics.get('min_15d', 'N/A')}%** ~ **{metrics.get('max_15d', 'N/A')}%**
+- 15日均值: **{metrics.get('avg_15d', 'N/A')}%**
+"""
+        
+        # 构建投资建议
+        action_emoji = '🟢' if action == '买入' else '🟡' if action == '持有' else '🔴'
+        confidence_bar = '█' * int(confidence * 10) + '░' * (10 - int(confidence * 10))
+        
+        advice_section = f"""
+💡 **投资建议**
+{action_emoji} **{action}** (信心度: {confidence:.1%})
+{confidence_bar}
+
+📝 **理由摘要**
+{summary}
+"""
+        
+        # 构建完整消息
+        markdown_content = f"""
+## {title}
+
+{core_metrics_section}
+
+{trend_section}
+
+{advice_section}
+
+🔗 **查看更多**
+点击查看完整分析报告，包含详细图表、历史数据和投资计算器。
+
+---
+📈 *AI投研助手自动推送* | 数据仅供参考，投资有风险
+"""
+        
+        return markdown_content
+    
+    def _get_trend_analysis(self, metrics: dict) -> str:
+        """生成趋势分析文本（增强版）"""
+        current = metrics.get('current_rate', 0)
+        avg_15d = metrics.get('avg_15d', 0)
+        percentile = metrics.get('percentile_15d', 50)
+        change = metrics.get('change_percent', 0)
+        
+        analysis_parts = []
+        
+        # 相对均值分析
+        if current > avg_15d:
+            analysis_parts.append(f"当前股息率({current:.4f}%)高于15日均值({avg_15d:.4f}%)")
+        elif current < avg_15d:
+            analysis_parts.append(f"当前股息率({current:.4f}%)低于15日均值({avg_15d:.4f}%)")
+        else:
+            analysis_parts.append(f"当前股息率({current:.4f}%)等于15日均值")
+        
+        # 分位数分析
+        if percentile > 70:
+            analysis_parts.append(f"处于历史较高水平(分位数{percentile:.1f}%)")
+        elif percentile < 30:
+            analysis_parts.append(f"处于历史较低水平(分位数{percentile:.1f}%)")
+        else:
+            analysis_parts.append(f"处于历史中等水平(分位数{percentile:.1f}%)")
+        
+        # 日变化分析
+        if isinstance(change, (int, float)) and abs(change) > 0.1:
+            direction = "上升" if change > 0 else "下降"
+            analysis_parts.append(f"日内{direction}{abs(change):.2f}%")
+        
+        return "，".join(analysis_parts) + "。"
+    
+    def _get_investment_advice(self, metrics: dict) -> str:
+        """生成投资建议（增强版）"""
+        # 优先使用投资决策算法生成的建议
+        investment_advice = metrics.get('investment_advice')
+        if isinstance(investment_advice, dict):
+            return investment_advice.get('summary', '建议结合其他技术指标和基本面分析做投资决策')
+        
+        # 备用逻辑
+        percentile = metrics.get('percentile_15d', 50)
+        pe = metrics.get('pe')
+        bond_yield = metrics.get('bond_yield')
+        
+        advice_parts = []
+        
+        if percentile > 70:
+            advice_parts.append("股息率处于历史高位，可考虑适度关注")
+        elif percentile < 30:
+            advice_parts.append("股息率处于历史低位，具有配置价值")
+        
+        if pe is not None:
+            if pe < 12:
+                advice_parts.append("PE估值较低，具备安全边际")
+            elif pe > 20:
+                advice_parts.append("PE估值较高，需注意风险")
+        
+        if bond_yield is not None and metrics.get('current_rate'):
+            spread = metrics.get('current_rate', 0) - bond_yield
+            if spread > 1.0:
+                advice_parts.append(f"股息率显著高于国债收益率(差额{spread:.2f}%)")
+            elif spread < 0:
+                advice_parts.append(f"股息率低于国债收益率(差额{spread:.2f}%)")
+        
+        if not advice_parts:
+            advice_parts.append("股息率处于合理区间，建议关注市场整体走势")
+        
+        return "；".join(advice_parts)
 
 # 钉钉消息类型常量
 DINGTALK_MSG_TYPES = {

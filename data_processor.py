@@ -1,5 +1,5 @@
 """
-数据处理模块 - 负责数据清洗、分析和指标计算
+数据处理模块 - 负责数据清洗、分析和指标计算，支持多指标分析和投资决策
 """
 
 import pandas as pd
@@ -17,12 +17,13 @@ class DataProcessor:
         """初始化数据处理器"""
         pass
     
-    def analyze_data(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def analyze_data(self, df: pd.DataFrame, bond_yield_data: Dict = None) -> Dict[str, Any]:
         """
-        分析CSV数据，提取关键指标
+        分析CSV数据，提取关键指标，整合国债收益率数据
         
         Args:
             df: 原始CSV数据
+            bond_yield_data: 国债收益率数据字典（可选）
             
         Returns:
             Dict: 包含分析结果的字典
@@ -33,15 +34,34 @@ class DataProcessor:
             # 数据预处理
             processed_df = self._preprocess_data(df)
             
-            # 计算关键指标
+            # 计算基础指标
             metrics = self._calculate_metrics(processed_df)
+            
+            # 整合国债收益率数据
+            if bond_yield_data:
+                metrics.update({
+                    'bond_yield': bond_yield_data.get('current_yield'),
+                    'bond_yield_change': bond_yield_data.get('yield_change'),
+                    'bond_date': bond_yield_data.get('date'),
+                    'bond_name': bond_yield_data.get('bond_name')
+                })
+                
+                # 计算股息率与国债收益率的对比
+                if metrics.get('current_rate') and metrics.get('bond_yield'):
+                    metrics['dividend_bond_spread'] = metrics['current_rate'] - metrics['bond_yield']
+                    metrics['dividend_bond_ratio'] = metrics['current_rate'] / metrics['bond_yield'] if metrics['bond_yield'] != 0 else None
+            
+            # 生成投资决策建议
+            investment_advice = self._generate_investment_advice(metrics)
+            metrics['investment_advice'] = investment_advice
             
             # 生成分析结果
             analysis_result = {
                 'raw_data': df,
                 'processed_data': processed_df,
                 'metrics': metrics,
-                'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'analysis_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'bond_yield_data': bond_yield_data
             }
             
             logger.info("数据分析完成")
@@ -150,3 +170,79 @@ class DataProcessor:
             trend = "持平"
             
         return f"股息率{trend}，当前值为{current_rate:.4f}"
+    
+    def _generate_investment_advice(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        生成投资决策建议（简化版，专注股息率和国债收益率）
+        
+        Args:
+            metrics: 指标字典
+            
+        Returns:
+            Dict: 投资决策建议
+        """
+        advice = {
+            'action': '持有',  # 买入/持有/卖出
+            'confidence': 0.5,  # 信心度 0-1
+            'reasons': [],
+            'risks': [],
+            'summary': ''
+        }
+        
+        # 1. 股息率分析
+        dividend_rate = metrics.get('current_rate')
+        dividend_percentile = metrics.get('percentile_15d', 50)
+        
+        if dividend_rate is not None:
+            if dividend_percentile > 70:
+                advice['reasons'].append(f"股息率处于历史高位(分位数{dividend_percentile:.1f}%)")
+                advice['confidence'] += 0.1
+            elif dividend_percentile < 30:
+                advice['reasons'].append(f"股息率处于历史低位(分位数{dividend_percentile:.1f}%)")
+                advice['confidence'] += 0.15
+            
+            # 股息率趋势
+            daily_change = metrics.get('daily_change', 0)
+            if daily_change > 0.05:
+                advice['reasons'].append("股息率呈现上升趋势")
+            elif daily_change < -0.05:
+                advice['reasons'].append("股息率呈现下降趋势")
+        
+        # 2. 国债收益率对比分析
+        bond_yield = metrics.get('bond_yield')
+        dividend_bond_spread = metrics.get('dividend_bond_spread')
+        
+        if bond_yield is not None and dividend_rate is not None:
+            if dividend_bond_spread > 1.0:
+                advice['reasons'].append(f"股息率显著高于国债收益率(差额{ dividend_bond_spread:.2f}%)")
+                advice['confidence'] += 0.2
+            elif dividend_bond_spread < 0:
+                advice['risks'].append(f"股息率低于国债收益率(差额{ dividend_bond_spread:.2f}%)")
+                advice['confidence'] -= 0.15
+            else:
+                advice['reasons'].append(f"股息率与国债收益率基本相当(差额{ dividend_bond_spread:.2f}%)")
+        
+        # 4. 综合决策
+        confidence = max(0, min(1, advice['confidence']))  # 限制在0-1之间
+        
+        if confidence > 0.7:
+            advice['action'] = '买入'
+            advice['summary'] = '估值吸引，股息率有优势，建议买入'
+        elif confidence > 0.4:
+            advice['action'] = '持有'
+            advice['summary'] = '估值合理，建议持有观察'
+        else:
+            advice['action'] = '卖出'
+            advice['summary'] = '估值偏高或股息率无优势，建议卖出'
+        
+        advice['confidence'] = confidence
+        
+        # 如果没有具体原因，添加默认说明
+        if not advice['reasons']:
+            advice['reasons'].append("基于当前市场环境和历史数据分析")
+        
+        if not advice['risks']:
+            advice['risks'].append("市场波动风险始终存在")
+        
+        logger.info(f"投资决策生成: {advice['action']} (信心度: {confidence:.2f})")
+        return advice
