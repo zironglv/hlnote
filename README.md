@@ -32,7 +32,8 @@ GitHub Actions → 多指数数据收集 → 并行数据处理 → 图表生成
 ## 📁 项目结构
 
 ```
-├── main_multi.py           # 多指数主程序入口
+├── main_multi_fixed.py     # 多指数主程序（简化版，推荐使用）
+├── main_multi.py           # 多指数主程序（原始版）
 ├── index_config.py         # 指数配置管理模块
 ├── multi_index_analyzer.py # 多指数分析核心逻辑
 ├── data_collector.py       # 数据收集模块
@@ -40,8 +41,14 @@ GitHub Actions → 多指数数据收集 → 并行数据处理 → 图表生成
 ├── report_generator.py     # 报告生成模块
 ├── dingtalk_sender.py      # 钉钉发送模块
 ├── config.md               # 配置说明文档
-└── .github/workflows/
-    └── daily_report.yml    # GitHub Actions工作流
+├── DEPLOYMENT_CONFIG.md    # 部署配置文档
+├── DEPLOYMENT_CHECKLIST.md # 部署检查清单
+├── requirements.txt        # Python依赖包
+├── .github/workflows/
+│   └── daily_report.yml    # GitHub Actions工作流（已配置钉钉Webhook）
+├── reports/                # 生成的报告和图表
+├── real_data_reports/      # 历史报告备份
+└── test_reports/          # 测试报告
 ```
 
 ## ⚙️ 快速开始
@@ -53,7 +60,7 @@ cd 自动化测试
 ```
 
 ### 2. 钉钉机器人配置
-在钉钉群中添加自定义机器人，获取Webhook URL，然后在 GitHub 仓库的 Settings → Secrets and variables → Actions 中添加 `DINGTALK_WEBHOOK` 变量。
+项目已配置钉钉Webhook，无需额外设置。如需修改，请编辑 `.github/workflows/daily_report.yml` 文件中的 `DINGTALK_WEBHOOK` 环境变量。
 
 ### 3. （可选）自定义指数配置
 编辑 `index_config.py` 文件，添加或修改要分析的指数配置。
@@ -68,10 +75,11 @@ git push origin main
 ## 🔧 配置详情
 
 ### 钉钉机器人配置
-1. 在钉钉群中添加自定义机器人
-2. 选择安全设置（建议使用关键词模式）
-3. 添加关键词：`AI投研助手`、`股息率`、`报告`、`分析`、`投资`
-4. 复制Webhook地址，在 GitHub 仓库的 Settings → Secrets and variables → Actions 中设置 `DINGTALK_WEBHOOK`
+项目已预配置钉钉Webhook，开箱即用。如需修改：
+
+1. 编辑 `.github/workflows/daily_report.yml` 文件
+2. 修改 `DINGTALK_WEBHOOK` 环境变量值
+3. 钉钉机器人关键词设置：`AI投研助手`、`股息率`、`报告`、`分析`、`投资`
 
 ### GitHub Actions 配置
 - 工作流文件：`.github/workflows/daily_report.yml`
@@ -101,6 +109,14 @@ git push origin main
 - 钉钉Webhook URL可在代码中配置
 - 支持钉钉机器人安全设置（关键词/IP白名单）
 - 敏感配置集中管理
+
+## 🧹 项目清理状态
+
+✅ **已完成清理**：
+- 删除所有调试文件 (`debug_*.py`, `debug_*.log`, `debug_*.png`)
+- 删除所有测试文件 (`test_*.py`, `test_*.png`, `test_report.html`)
+- 清理临时目录 (`__pycache__`, `debug_download`, `.qoder`, `.venv`, `venv`)
+- 保持核心功能文件完整
 
 ## 🤖 后续计划
 
