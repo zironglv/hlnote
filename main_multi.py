@@ -47,32 +47,93 @@ def main():
         except Exception as e:
             logger.warning(f"调试消息发送失败: {str(e)}")
     
-    # 设置matplotlib后端以避免GUI相关问题
-    try:
-        import matplotlib
-        matplotlib.use('Agg')  # 使用非GUI后端
-        logger.info("📊 matplotlib后端设置为Agg")
-    except Exception as e:
-        logger.warning(f"matplotlib后端设置失败: {str(e)}")
+        # 设置matplotlib后端以避免GUI相关问题
     
-    try:
-        logger.info("=== AI投研助手(多指数版)开始执行 ===")
-        if debug_sender:
-            msg = {
-                "msgtype": "text",
-                "text": {
-                    "content": "🔧 节点1: 程序启动和环境检查"
-                }
-            }
-            try:
-                debug_sender._send_message(msg)
-            except Exception as e:
-                logger.debug(f"节点1调试消息发送失败: {str(e)}")
+        try:
+    
+            import matplotlib
+    
+            matplotlib.use('Agg')  # 使用非GUI后端
+    
+            logger.info("📊 matplotlib后端设置为Agg")
+    
+        except Exception as e:
+    
+            logger.warning(f"matplotlib后端设置失败: {str(e)}")
+    
         
-        # 系统健康检查
-        import platform
-        system_info = f"🖥️ 系统: {platform.system()} {platform.release()}, Python: {platform.python_version()}"
-        logger.info(system_info)
+    
+        try:
+    
+            logger.info("=== AI投研助手(多指数版)开始执行 ===")
+    
+            
+    
+            # 系统健康检查
+    
+            import platform
+    
+            system_info = f"🖥️ 系统: {platform.system()} {platform.release()}, Python: {platform.python_version()}"
+    
+            logger.info(system_info)
+    
+            
+    
+            # 检查钉钉Webhook配置
+    
+            if dingtalk_webhook:
+    
+                webhook_info = f"✅ 检测到 DINGTALK_WEBHOOK (长度: {len(dingtalk_webhook)} 字符)"
+    
+                logger.info(webhook_info)
+    
+            else:
+    
+                warning_msg = "⚠️ 未找到 DINGTALK_WEBHOOK 环境变量"
+    
+                logger.warning(warning_msg)
+    
+            
+    
+            # 网络连通性检查
+    
+            try:
+    
+                import requests
+    
+                response = requests.get('https://www.baidu.com', timeout=5)
+    
+                network_status = "🌐 网络连接正常"
+    
+                logger.info(network_status)
+    
+            except Exception as e:
+    
+                network_error = f"⚠️ 网络连接可能存在问题: {str(e)}"
+    
+                logger.warning(network_error)
+    
+                
+    
+                # 系统健康检查
+    
+                import platform
+    
+                system_info = f"🖥️ 系统: {platform.system()} {platform.release()}, Python: {platform.python_version()}"
+    
+                logger.info(system_info)
+    
+            
+    
+            except Exception as e:
+    
+                logger.error(f"程序执行过程中发生错误: {str(e)}")
+    
+                import traceback
+    
+                traceback.print_exc()
+    
+                return 1
         if debug_sender:
             msg = {
                 "msgtype": "text",
@@ -235,35 +296,9 @@ def main():
                     except Exception as e:
                         logger.debug(f"测试失败消息发送失败: {str(e)}")
         
-        # 节点5: 运行多指数分析
-        if debug_sender:
-            msg = {
-                "msgtype": "text",
-                "text": {
-                    "content": "📈 节点5: 开始多指数分析"
-                }
-            }
-            try:
-                debug_sender._send_message(msg)
-            except Exception as e:
-                logger.debug(f"节点5调试消息发送失败: {str(e)}")
-        
         # 设置 send_summary=False 来只发送指数报告而不发送总结报告
         analyzer = MultiIndexAnalyzer(indexes, send_summary=False, dingtalk_webhook=dingtalk_webhook)
         analysis_results, send_results = analyzer.run_full_analysis()
-        
-        # 节点6: 结果统计
-        if debug_sender:
-            msg = {
-                "msgtype": "text",
-                "text": {
-                    "content": "📊 节点6: 分析结果统计"
-                }
-            }
-            try:
-                debug_sender._send_message(msg)
-            except Exception as e:
-                logger.debug(f"节点6调试消息发送失败: {str(e)}")
         
         # 输出结果统计
         success_count = sum(1 for r in analysis_results if r.success)
