@@ -24,8 +24,8 @@ jobs:
         python -m pip install --upgrade pip
         # 安装系统字体包（解决matplotlib中文显示问题）
         sudo apt-get update
-        sudo apt-get install -y fonts-wqy-zenhei fonts-wqy-microhei ttf-wqy-zenhei ttf-wqy-microhei
-        # 清理字体缓存
+        sudo apt-get install -y fonts-wqy-zenhei fonts-wqy-microhei ttf-wqy-zenhei ttf-wqy-microhei fonts-dejavu
+        # 清理字体缓存并重建
         rm -rf ~/.cache/matplotlib
         # 安装Python依赖
         pip install -r requirements.txt
@@ -33,6 +33,8 @@ jobs:
         pip install openpyxl
         # 安装xlrd用于读取.xls格式的Excel文件
         pip install xlrd>=2.0.1
+        # 验证字体安装
+        python -c "import matplotlib; matplotlib.font_manager._rebuild(); print('✅ 字体缓存已重建')"
         
     - name: 配置环境变量
       run: |

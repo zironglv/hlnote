@@ -17,24 +17,36 @@ from io import BytesIO
 import matplotlib
 import sys
 
+# 清理matplotlib字体缓存
+import matplotlib.font_manager
+matplotlib.font_manager._rebuild()
+
 # 检查是否在GitHub Actions环境中
 if 'GITHUB_ACTIONS' in os.environ:
-    # GitHub Actions环境，尝试安装中文字体
+    # GitHub Actions环境，使用系统可用的中文字体
     try:
-        # 使用系统默认字体，避免中文显示问题
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS', 'sans-serif']
+        # 尝试使用STHeiti或Songti等系统自带中文字体
+        plt.rcParams['font.sans-serif'] = ['STHeiti', 'Songti SC', 'DejaVu Sans', 'sans-serif']
         plt.rcParams['axes.unicode_minus'] = False
         # 设置字体大小
         plt.rcParams['font.size'] = 12
+        logger.info("GitHub Actions环境使用STHeiti/Songti中文字体")
     except Exception as e:
         logger.warning(f"GitHub Actions中文字体设置失败: {e}")
         # 使用默认字体
         plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
         plt.rcParams['axes.unicode_minus'] = False
 else:
-    # 本地环境，使用中文字体
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans', 'sans-serif']
-    plt.rcParams['axes.unicode_minus'] = False
+    # 本地环境，使用系统可用的中文字体
+    try:
+        # 优先使用STHeiti，其次是Songti，然后是系统默认字体
+        plt.rcParams['font.sans-serif'] = ['STHeiti', 'Songti SC', 'Kaiti SC', 'DejaVu Sans', 'sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False
+        logger.info("本地环境使用STHeiti/Songti中文字体")
+    except Exception as e:
+        logger.warning(f"本地中文字体设置失败: {e}")
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False
 
 # 全局设置
 plt.rcParams['figure.autolayout'] = True

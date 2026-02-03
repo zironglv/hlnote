@@ -366,21 +366,31 @@ class DingTalkSender:
         
         analysis_parts = []
         
+        # 安全处理数值变量，确保是数字类型
+        try:
+            current_value = float(current) if current is not None else 0.0
+            avg_15d_value = float(avg_15d) if avg_15d is not None else 0.0
+            percentile_value = float(percentile) if percentile is not None else 50.0
+        except (ValueError, TypeError):
+            current_value = 0.0
+            avg_15d_value = 0.0
+            percentile_value = 50.0
+        
         # 相对均值分析
-        if current > avg_15d:
-            analysis_parts.append(f"当前股息率({current:.4f}%)高于15日均值({avg_15d:.4f}%)")
-        elif current < avg_15d:
-            analysis_parts.append(f"当前股息率({current:.4f}%)低于15日均值({avg_15d:.4f}%)")
+        if current_value > avg_15d_value:
+            analysis_parts.append(f"当前股息率({current_value:.4f}%)高于15日均值({avg_15d_value:.4f}%)")
+        elif current_value < avg_15d_value:
+            analysis_parts.append(f"当前股息率({current_value:.4f}%)低于15日均值({avg_15d_value:.4f}%)")
         else:
-            analysis_parts.append(f"当前股息率({current:.4f}%)等于15日均值")
+            analysis_parts.append(f"当前股息率({current_value:.4f}%)等于15日均值")
         
         # 分位数分析
-        if percentile > 70:
-            analysis_parts.append(f"处于历史较高水平(分位数{percentile:.1f}%)")
-        elif percentile < 30:
-            analysis_parts.append(f"处于历史较低水平(分位数{percentile:.1f}%)")
+        if percentile_value > 70:
+            analysis_parts.append(f"处于历史较高水平(分位数{percentile_value:.1f}%)")
+        elif percentile_value < 30:
+            analysis_parts.append(f"处于历史较低水平(分位数{percentile_value:.1f}%)")
         else:
-            analysis_parts.append(f"处于历史中等水平(分位数{percentile:.1f}%)")
+            analysis_parts.append(f"处于历史中等水平(分位数{percentile_value:.1f}%)")
         
         # 日变化分析
         if isinstance(change, (int, float)) and abs(change) > 0.1:
