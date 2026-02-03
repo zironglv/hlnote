@@ -147,15 +147,9 @@ def check_dingtalk_config():
             log_step(f"✅ 检测到DINGTALK_WEBHOOK环境变量")
             log_step(f"Webhook长度: {len(webhook)} 字符")
             
-            # 测试连接
-            from dingtalk_sender import DingTalkSender
-            sender = DingTalkSender(webhook_url=webhook)
-            if sender.test_connection():
-                log_step("✅ 钉钉连接测试成功")
-                return True
-            else:
-                log_step("❌ 钉钉连接测试失败", "ERROR")
-                return False
+            # 不进行实际连接测试以避免频率限制
+            log_step("ℹ️ 跳过钉钉连接测试以避免频率限制")
+            return True
         else:
             log_step("⚠️ 未找到DINGTALK_WEBHOOK环境变量", "WARNING")
             return True  # 没有钉钉配置不算错误
