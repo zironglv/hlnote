@@ -40,19 +40,16 @@ jobs:
         if [ -z "$DINGTALK_WEBHOOK" ]; then
           echo "⚠️ 注意: DINGTALK_WEBHOOK 环境变量未设置"
         else
-          echo "✅ DINGTALK_WEBHOOK 已设置，长度: ${#DINGTALK_WEBHOOK} 字符"
-          # 显示URL的部分信息用于调试（隐藏敏感部分）
-          WEBHOOK_DOMAIN=$(echo $DINGTALK_WEBHOOK | cut -d'/' -f3)
-          echo "🔗 Webhook域名: $WEBHOOK_DOMAIN"
+          echo "✅ DINGTALK_WEBHOOK 已配置（安全模式）"
+          # 不再显示敏感信息
         fi
         
     - name: 运行多指数AI投研助手
       env:
-        DINGTALK_WEBHOOK: "https://oapi.dingtalk.com/robot/send?access_token=0b782dbef56eba11d5f2f136e4247ad5fb3d3022653adb3acd37bdf060b7dfcf"
+        DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
         echo "🚀 开始运行多指数分析..."
-        echo "钉钉Webhook已配置，长度: ${#DINGTALK_WEBHOOK} 字符"
-        echo "Webhook结尾: ${DINGTALK_WEBHOOK: -30}"
+        echo "✅ 钉钉Webhook已配置（安全模式）"
         
         # 启用详细错误捕获
         set -x  # 显示执行的每条命令

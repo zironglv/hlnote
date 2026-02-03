@@ -106,9 +106,39 @@ git push origin main
 
 ## 🔒 安全性
 
-- 钉钉Webhook URL可在代码中配置
-- 支持钉钉机器人安全设置（关键词/IP白名单）
-- 敏感配置集中管理
+### 钉钉Webhook安全配置
+- ✅ **GitHub Secrets保护**：钉钉Webhook URL已迁移到GitHub Secrets，避免代码中明文暴露
+- ✅ **环境变量安全**：工作流中使用`${{ secrets.DINGTALK_WEBHOOK }}`引用，确保敏感信息加密
+- ✅ **访问控制**：建议在钉钉机器人设置中配置IP白名单，限制只有GitHub Actions的IP可以调用
+- ✅ **关键词验证**：所有消息必须包含预设关键词：`AI投研助手`、`股息率`、`报告`、`分析`、`投资`
+
+### 配置步骤
+1. **GitHub Secrets配置**：
+   - 在仓库Settings → Secrets and variables → Actions中添加`DINGTALK_WEBHOOK`
+   - 值为钉钉机器人完整的Webhook URL
+
+2. **钉钉机器人安全加固**（推荐）：
+   - 登录钉钉机器人管理后台
+   - 设置IP白名单：添加GitHub Actions的IP范围
+   - 启用关键词验证
+
+## 🌐 GitHub Pages部署
+
+### 自动部署
+- ✅ **自动触发**：每日报告生成后自动部署到GitHub Pages
+- ✅ **公开访问**：报告可通过Web链接直接访问
+- ✅ **版本管理**：每次部署保留历史版本
+
+### 访问方式
+报告生成后可通过以下链接访问：
+```
+https://zironglv.github.io/hlnote/
+```
+
+### 部署工作流
+- 工作流文件：`.github/workflows/deploy-pages.yml`
+- 触发条件：每日报告工作流成功完成后自动触发
+- 部署内容：`reports/`目录中的所有HTML报告和图表
 
 ## 🧹 项目清理状态
 
