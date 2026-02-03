@@ -41,8 +41,8 @@ class DingTalkSender:
         try:
             logger.info("开始发送钉钉消息...")
             
-                    # 构造钉钉消息（使用日报简洁版）
-                    message = self._build_dingtalk_message(html_content, chart_path, index_info, processed_data)            
+            # 构造钉钉消息（使用日报简洁版）
+            message = self._build_dingtalk_message(html_content, chart_path, index_info, processed_data)            
             # 发送消息
             success = self._send_message(message)
             
