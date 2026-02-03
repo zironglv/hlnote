@@ -46,9 +46,12 @@ jobs:
         
     - name: 运行多指数AI投研助手
       env:
-        DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+        DINGTALK_WEBHOOK: "https://oapi.dingtalk.com/robot/send?access_token=0b782dbef56eba11d5f2f136e4247ad5fb3d3022653adb3acd37bdf060b7dfcf"
       run: |
         echo "🚀 开始运行多指数分析..."
+        echo "钉钉Webhook已配置，长度: ${#DINGTALK_WEBHOOK} 字符"
+        echo "Webhook结尾: ${DINGTALK_WEBHOOK: -30}"
+        
         # 启用详细错误捕获
         set -x  # 显示执行的每条命令
         python main_multi_fixed.py 2>&1 | tee execution_log.txt
