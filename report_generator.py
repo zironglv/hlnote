@@ -13,9 +13,31 @@ from typing import Dict, Tuple
 import base64
 from io import BytesIO
 
-# 设置中文字体
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
-plt.rcParams['axes.unicode_minus'] = False
+# 设置中文字体 - 支持GitHub Actions环境
+import matplotlib
+import sys
+
+# 检查是否在GitHub Actions环境中
+if 'GITHUB_ACTIONS' in os.environ:
+    # GitHub Actions环境，尝试安装中文字体
+    try:
+        # 使用系统默认字体，避免中文显示问题
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS', 'sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False
+        # 设置字体大小
+        plt.rcParams['font.size'] = 12
+    except Exception as e:
+        logger.warning(f"GitHub Actions中文字体设置失败: {e}")
+        # 使用默认字体
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False
+else:
+    # 本地环境，使用中文字体
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans', 'sans-serif']
+    plt.rcParams['axes.unicode_minus'] = False
+
+# 全局设置
+plt.rcParams['figure.autolayout'] = True
 
 logger = logging.getLogger(__name__)
 

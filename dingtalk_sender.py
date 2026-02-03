@@ -320,11 +320,18 @@ class DingTalkSender:
         
         # 构建投资建议
         action_emoji = '🟢' if action == '买入' else '🟡' if action == '持有' else '🔴'
-        confidence_bar = '█' * int(confidence * 10) + '░' * (10 - int(confidence * 10))
+        
+        # 安全处理confidence变量，确保是数值类型
+        try:
+            confidence_value = float(confidence) if confidence is not None else 0.5
+        except (ValueError, TypeError):
+            confidence_value = 0.5
+        
+        confidence_bar = '█' * int(confidence_value * 10) + '░' * (10 - int(confidence_value * 10))
         
         advice_section = f"""
 💡 **投资建议**
-{action_emoji} **{action}** (信心度: {confidence:.1%})
+{action_emoji} **{action}** (信心度: {confidence_value:.1%})
 {confidence_bar}
 
 📝 **理由摘要**
