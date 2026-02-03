@@ -25,6 +25,8 @@ jobs:
         pip install -r requirements.txt
         # 确保安装openpyxl用于读取Excel文件
         pip install openpyxl
+        # 安装xlrd用于读取.xls格式的Excel文件
+        pip install xlrd>=2.0.1
         
     - name: 配置环境变量
       run: |
