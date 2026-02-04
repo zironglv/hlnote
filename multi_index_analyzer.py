@@ -276,8 +276,8 @@ class MultiIndexAnalyzer:
             if not result.success:
                 summary += f" - {result.error_message}"
         
-        # 根据配置决定是否发送总结报告
-        if include_summary:
+        # 禁用summary报告发送，只发送单个指数的日报
+        if False:  # 暂时禁用summary报告
             try:
                 # 构造包含多个指数信息的总结标题
                 index_names = [result.index_config.name for result in analysis_results if result.success]

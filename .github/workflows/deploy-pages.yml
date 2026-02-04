@@ -32,7 +32,7 @@ jobs:
           });
           
           const reportArtifact = artifacts.data.artifacts.find(
-            artifact => artifact.name.includes('daily-report') && artifact.name.includes('reports')
+            artifact => artifact.name === 'daily-reports'
           );
           
           if (reportArtifact) {
