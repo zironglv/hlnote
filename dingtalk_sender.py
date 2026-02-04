@@ -366,9 +366,15 @@ class DingTalkSender:
 """
         
         # 构建趋势分析
+        # 安全获取数值类型
+        try:
+            percentile_val = float(metrics.get('percentile_15d', 50))
+        except (ValueError, TypeError):
+            percentile_val = 50.0
+        
         trend_section = f"""
 🎯 **趋势分析**
-- 股息率历史分位数: **{metrics.get('percentile_15d', 'N/A')}%** {'(高位)' if metrics.get('percentile_15d', 50) > 70 else '(低位)' if metrics.get('percentile_15d', 50) < 30 else '(中位)'}
+- 股息率历史分位数: **{metrics.get('percentile_15d', 'N/A')}%** {'(高位)' if percentile_val > 70 else '(低位)' if percentile_val < 30 else '(中位)'}
 - 15日范围: **{metrics.get('min_15d', 'N/A')}%** ~ **{metrics.get('max_15d', 'N/A')}%**
 - 15日均值: **{metrics.get('avg_15d', 'N/A')}%**
 """
