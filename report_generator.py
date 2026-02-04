@@ -17,9 +17,20 @@ from io import BytesIO
 import matplotlib
 import sys
 
-# 清理matplotlib字体缓存
+# 配置日志（提前定义，避免循环依赖）
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# 清理matplotlib字体缓存（兼容不同版本）
 import matplotlib.font_manager
-matplotlib.font_manager._rebuild()
+try:
+    # 新版本matplotlib
+    matplotlib.font_manager._rebuild()
+except AttributeError:
+    # 旧版本matplotlib或其他情况
+    pass
+except Exception as e:
+    logger.warning(f"字体缓存重建失败: {e}")
 
 # 检查是否在GitHub Actions环境中
 if 'GITHUB_ACTIONS' in os.environ:
@@ -50,8 +61,6 @@ else:
 
 # 全局设置
 plt.rcParams['figure.autolayout'] = True
-
-logger = logging.getLogger(__name__)
 
 class ReportGenerator:
     """报告生成器"""

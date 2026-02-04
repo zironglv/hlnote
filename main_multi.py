@@ -14,7 +14,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from multi_index_analyzer import MultiIndexAnalyzer, run_multi_index_analysis
 from index_config import IndexConfig, index_manager
-import local_config as config
+# local_config 模块在GitHub Actions环境中不存在，移除依赖
+# import local_config as config
 
 # 配置日志
 logging.basicConfig(
