@@ -351,9 +351,12 @@ class DingTalkSender:
         
         confidence_bar = '█' * int(confidence_value * 10) + '░' * (10 - int(confidence_value * 10))
         
+        # 确保格式化安全
+        confidence_percent = f"{confidence_value:.1%}" if isinstance(confidence_value, (int, float)) else "50.0%"
+        
         advice_section = f"""
 💡 **投资建议**
-{action_emoji} **{action}** (信心度: {confidence_value:.1%})
+{action_emoji} **{action}** (信心度: {confidence_percent})
 {confidence_bar}
 
 📝 **理由摘要**
@@ -393,18 +396,23 @@ class DingTalkSender:
             current_value = float(current) if current is not None else 0.0
             avg_15d_value = float(avg_15d) if avg_15d is not None else 0.0
             percentile_value = float(percentile) if percentile is not None else 50.0
+            change_value = float(change) if change is not None else 0.0
         except (ValueError, TypeError):
             current_value = 0.0
             avg_15d_value = 0.0
             percentile_value = 50.0
+            change_value = 0.0
         
         # 相对均值分析
+        current_formatted = f"{current_value:.4f}" if isinstance(current_value, (int, float)) else str(current_value)
+        avg_formatted = f"{avg_15d_value:.4f}" if isinstance(avg_15d_value, (int, float)) else str(avg_15d_value)
+        
         if current_value > avg_15d_value:
-            analysis_parts.append(f"当前股息率({current_value:.4f}%)高于15日均值({avg_15d_value:.4f}%)")
+            analysis_parts.append(f"当前股息率({current_formatted}%)高于15日均值({avg_formatted}%)")
         elif current_value < avg_15d_value:
-            analysis_parts.append(f"当前股息率({current_value:.4f}%)低于15日均值({avg_15d_value:.4f}%)")
+            analysis_parts.append(f"当前股息率({current_formatted}%)低于15日均值({avg_formatted}%)")
         else:
-            analysis_parts.append(f"当前股息率({current_value:.4f}%)等于15日均值")
+            analysis_parts.append(f"当前股息率({current_formatted}%)等于15日均值")
         
         # 分位数分析
         if percentile_value > 70:
@@ -415,9 +423,9 @@ class DingTalkSender:
             analysis_parts.append(f"处于历史中等水平(分位数{percentile_value:.1f}%)")
         
         # 日变化分析
-        if isinstance(change, (int, float)) and abs(change) > 0.1:
-            direction = "上升" if change > 0 else "下降"
-            analysis_parts.append(f"日内{direction}{abs(change):.2f}%")
+        if abs(change_value) > 0.1:
+            direction = "上升" if change_value > 0 else "下降"
+            analysis_parts.append(f"日内{direction}{abs(change_value):.2f}%")
         
         return "，".join(analysis_parts) + "。"
     
@@ -447,11 +455,15 @@ class DingTalkSender:
                 advice_parts.append("PE估值较高，需注意风险")
         
         if bond_yield is not None and metrics.get('current_rate'):
-            spread = metrics.get('current_rate', 0) - bond_yield
-            if spread > 1.0:
-                advice_parts.append(f"股息率显著高于国债收益率(差额{spread:.2f}%)")
-            elif spread < 0:
-                advice_parts.append(f"股息率低于国债收益率(差额{spread:.2f}%)")
+            try:
+                current_rate_value = float(metrics.get('current_rate', 0))
+                spread = current_rate_value - bond_yield
+                if spread > 1.0:
+                    advice_parts.append(f"股息率显著高于国债收益率(差额{spread:.2f}%)")
+                elif spread < 0:
+                    advice_parts.append(f"股息率低于国债收益率(差额{spread:.2f}%)")
+            except (ValueError, TypeError):
+                logger.warning(f"无法计算股息率与国债收益率差值: current_rate={metrics.get('current_rate')}, bond_yield={bond_yield}")
         
         if not advice_parts:
             advice_parts.append("股息率处于合理区间，建议关注市场整体走势")
