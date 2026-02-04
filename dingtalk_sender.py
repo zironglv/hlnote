@@ -141,6 +141,23 @@ class DingTalkSender:
                 change_percent = float(data_metrics.get('change_percent', 0))
                 percentile_15d = float(data_metrics.get('percentile_15d', 0))
                 
+                # 创建转换后的指标字典供趋势分析和投资建议使用
+                converted_metrics = {
+                    'current_rate': current_rate,
+                    'avg_15d': avg_15d,
+                    'max_15d': max_15d,
+                    'min_15d': min_15d,
+                    'change_percent': change_percent,
+                    'percentile_15d': percentile_15d,
+                    'pe': data_metrics.get('pe'),
+                    'pb': data_metrics.get('pb'),
+                    'pe_percentile': data_metrics.get('pe_percentile'),
+                    'pb_percentile': data_metrics.get('pb_percentile'),
+                    'bond_yield': data_metrics.get('bond_yield'),
+                    'dividend_bond_spread': data_metrics.get('dividend_bond_spread'),
+                    'investment_advice': data_metrics.get('investment_advice')
+                }
+                
                 metrics.update({
                     'current_rate': f"{current_rate:.4f}",
                     'avg_15d': f"{avg_15d:.4f}",
@@ -148,33 +165,49 @@ class DingTalkSender:
                     'min_15d': f"{min_15d:.4f}",
                     'change_percent': f"{change_percent:+.2f}",
                     'percentile_15d': f"{percentile_15d:.1f}",
-                    'trend_analysis': self._get_trend_analysis(data_metrics),
-                    'investment_advice': self._get_investment_advice(data_metrics)
+                    'trend_analysis': self._get_trend_analysis(converted_metrics),
+                    'investment_advice': self._get_investment_advice(converted_metrics)
                 })
             except (ValueError, TypeError) as e:
                 logger.warning(f"数据转换失败，使用默认值: {e}")
-                # 使用默认值
+                # 使用默认值（数值类型）
+                default_metrics = {
+                    'current_rate': 5.0200,
+                    'avg_15d': 5.0200,
+                    'max_15d': 5.0900,
+                    'min_15d': 4.9900,
+                    'change_percent': 0.60,
+                    'percentile_15d': 30.0
+                }
                 metrics.update({
-                    'current_rate': '5.0200',
-                    'avg_15d': '5.0200',
-                    'max_15d': '5.0900',
-                    'min_15d': '4.9900',
-                    'change_percent': '+0.60',
-                    'percentile_15d': '30.0',
-                    'trend_analysis': '当前股息率略高于15日均值，处于历史中等偏低水平',
-                    'investment_advice': '股息率处于合理区间，建议关注市场整体走势'
+                    'current_rate': f"{default_metrics['current_rate']:.4f}",
+                    'avg_15d': f"{default_metrics['avg_15d']:.4f}",
+                    'max_15d': f"{default_metrics['max_15d']:.4f}",
+                    'min_15d': f"{default_metrics['min_15d']:.4f}",
+                    'change_percent': f"{default_metrics['change_percent']:+.2f}",
+                    'percentile_15d': f"{default_metrics['percentile_15d']:.1f}",
+                    'trend_analysis': self._get_trend_analysis(default_metrics),
+                    'investment_advice': self._get_investment_advice(default_metrics)
                 })
         else:
-            # 默认值（用于测试）
+            # 默认值（用于测试，数值类型）
+            default_metrics = {
+                'current_rate': 5.0200,
+                'avg_15d': 5.0200,
+                'max_15d': 5.0900,
+                'min_15d': 4.9900,
+                'change_percent': 0.60,
+                'percentile_15d': 30.0
+            }
             metrics.update({
-                'current_rate': '5.0200',
-                'avg_15d': '5.0200',
-                'max_15d': '5.0900',
-                'min_15d': '4.9900',
-                'change_percent': '+0.60',
-                'percentile_15d': '30.0',
-                'trend_analysis': '当前股息率略高于15日均值，处于历史中等偏低水平',
-                'investment_advice': '股息率处于合理区间，建议关注市场整体走势'
+                'current_rate': f"{default_metrics['current_rate']:.4f}",
+                'avg_15d': f"{default_metrics['avg_15d']:.4f}",
+                'max_15d': f"{default_metrics['max_15d']:.4f}",
+                'min_15d': f"{default_metrics['min_15d']:.4f}",
+                'change_percent': f"{default_metrics['change_percent']:+.2f}",
+                'percentile_15d': f"{default_metrics['percentile_15d']:.1f}",
+                'trend_analysis': self._get_trend_analysis(default_metrics),
+                'investment_advice': self._get_investment_advice(default_metrics)
             })
         
         return metrics
