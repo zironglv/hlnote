@@ -1,90 +1,76 @@
-name: AI投研助手 - 多指数每日报告
+name: Daily Investment Report
 
 on:
+  workflow_dispatch:
   schedule:
-    # 每天UTC时间23:00执行（北京时间次日早上7点）
     - cron: '0 23 * * *'
-  workflow_dispatch:  # 允许手动触发
 
 jobs:
   generate-report:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout代码
+    - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: 设置Python环境
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
         
-    - name: 安装依赖
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        # 安装系统字体包（解决matplotlib中文显示问题）
         sudo apt-get update
         sudo apt-get install -y fonts-wqy-zenhei fonts-wqy-microhei ttf-wqy-zenhei ttf-wqy-microhei fonts-dejavu
-        # 清理字体缓存并重建
         rm -rf ~/.cache/matplotlib
-        # 安装Python依赖
         pip install -r requirements.txt
-        # 确保安装openpyxl用于读取Excel文件
         pip install openpyxl
-        # 安装xlrd用于读取.xls格式的Excel文件
         pip install xlrd>=2.0.1
-        # 验证字体安装和缓存
         python -c "
 import matplotlib.font_manager
-import os
-# 重建字体缓存
 matplotlib.font_manager._rebuild()
-print('✅ 字体缓存已重建')
-# 检查中文字体
+print('✅ Font cache rebuilt')
 fonts = matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
 chinese_fonts = [f for f in fonts if any(keyword in f.lower() for keyword in ['wqy', 'zenhei', 'microhei', 'songti', 'kaiti', 'heiti'])]
-print(f'✅ 找到 {len(chinese_fonts)} 个中文字体文件')
-if chinese_fonts:
-    print('中文字体示例:', chinese_fonts[:3])
+print(f'✅ Found {len(chinese_fonts)} Chinese font files')
 "
         
-    - name: 配置环境变量
+    - name: Configure environment
       run: |
-        echo "使用钉钉机器人推送，无需邮箱配置"
-        echo "配置检查完成"
-        echo "Python版本: $(python --version)"
-        echo "pip版本: $(pip --version)"
+        echo "Using DingTalk robot for notifications"
+        echo "Configuration check completed"
+        echo "Python version: $(python --version)"
+        echo "pip version: $(pip --version)"
         
-    - name: 配置钉钉Webhook（可选）
+    - name: Configure DingTalk Webhook
       run: |
         if [ -z "$DINGTALK_WEBHOOK" ]; then
-          echo "⚠️ 注意: DINGTALK_WEBHOOK 环境变量未设置"
+          echo "⚠️ Note: DINGTALK_WEBHOOK environment variable not set"
         else
-          echo "✅ DINGTALK_WEBHOOK 已配置（安全模式）"
+          echo "✅ DINGTALK_WEBHOOK configured (secure mode)"
         fi
         
-    - name: 运行多指数AI投研助手
+    - name: Run multi-index investment assistant
       env:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
-        echo "🚀 开始运行多指数分析..."
-        echo "✅ 钉钉Webhook已配置（安全模式）"
-        
-        # 启用详细错误捕获
-        set -x  # 显示执行的每条命令
+        echo "🚀 Starting multi-index analysis..."
+        echo "✅ DingTalk Webhook configured (secure mode)"
+        set -x
         python main_multi.py 2>&1 | tee execution_log.txt
         EXIT_CODE=${PIPESTATUS[0]}
         set +x
-        echo "程序退出码: $EXIT_CODE"
+        echo "Program exit code: $EXIT_CODE"
         if [ $EXIT_CODE -eq 0 ]; then
-          echo "✅ 多指数分析执行成功"
+          echo "✅ Multi-index analysis executed successfully"
         else
-          echo "❌ 多指数分析执行失败，退出码: $EXIT_CODE"
-          echo "=== 详细错误日志 ==="
+          echo "❌ Multi-index analysis failed, exit code: $EXIT_CODE"
+          echo "=== Detailed error log ==="
           cat execution_log.txt
         fi
         
-    - name: 检查报告目录是否存在
+    - name: Check if reports directory exists
       run: |
         if [ -d "reports" ]; then
           echo "REPORTS_EXIST=true" >> $GITHUB_ENV
@@ -92,7 +78,7 @@ if chinese_fonts:
           echo "REPORTS_EXIST=false" >> $GITHUB_ENV
         fi
       
-    - name: 上传报告目录作为artifact
+    - name: Upload reports as artifact
       uses: actions/upload-artifact@v4
       if: env.REPORTS_EXIST == 'true'
       with:
@@ -100,7 +86,7 @@ if chinese_fonts:
         path: reports/
         retention-days: 7
         
-    - name: 检查日志文件是否存在
+    - name: Check if log files exist
       run: |
         if [ -n "$(ls *.log 2>/dev/null)" ] || [ -f "execution_log.txt" ]; then
           echo "LOGS_EXIST=true" >> $GITHUB_ENV
@@ -108,7 +94,7 @@ if chinese_fonts:
           echo "LOGS_EXIST=false" >> $GITHUB_ENV
         fi
       
-    - name: 上传日志文件作为artifact
+    - name: Upload logs as artifact
       uses: actions/upload-artifact@v4
       if: env.LOGS_EXIST == 'true'
       with:
@@ -118,39 +104,38 @@ if chinese_fonts:
           execution_log.txt
         retention-days: 7
         
-    - name: 系统状态检查
+    - name: System status check
       if: always()
       run: |
-        echo "🖥️ 系统信息:"
+        echo "🖥️ System information:"
         uname -a
-        echo "\n📦 Python环境:"
+        echo "\n📦 Python environment:"
         python --version
         pip list | grep -E "(pandas|requests|matplotlib|openpyxl)"
-        echo "\n🌐 网络检查:"
-        curl -s -o /dev/null -w "%{http_code}" https://www.baidu.com && echo " 百度访问正常" || echo " 百度访问失败"
-        curl -s -o /dev/null -w "%{http_code}" https://oapi.dingtalk.com && echo " 钉钉API访问正常" || echo " 钉钉API访问失败"
+        echo "\n🌐 Network check:"
+        curl -s -o /dev/null -w "%{http_code}" https://www.baidu.com && echo " Baidu access normal" || echo " Baidu access failed"
+        curl -s -o /dev/null -w "%{http_code}" https://oapi.dingtalk.com && echo " DingTalk API access normal" || echo " DingTalk API access failed"
       
-    - name: 错误日志输出
+    - name: Error log output
       if: always()
       run: |
-        echo "🚨 输出所有可能的日志内容："
-        echo "=== 检查当前目录文件 ==="
+        echo "🚨 Output all possible log content:"
+        echo "=== Check current directory files ==="
         ls -la
-        echo "\n=== 检查日志文件内容 ==="
+        echo "\n=== Check log file content ==="
         for logfile in *.log; do
           if [ -f "$logfile" ]; then
-            echo "\n--- $logfile 内容 ---"
+            echo "\n--- $logfile content ---"
             tail -n 50 "$logfile"
           fi
         done
         if [ ! -f "multi_index_dividend_analyzer.log" ]; then
-          echo "\n--- 没有找到预期的日志文件 ---"
+          echo "\n--- Expected log file not found ---"
         fi
-        
-        echo "\n=== 检查报告文件 ==="
+        echo "\n=== Check report files ==="
         if [ -d "reports" ]; then
-          echo "报告目录存在:"
+          echo "Report directory exists:"
           find reports -type f -name "*.html" -o -name "*.png" | head -10
         else
-          echo "报告目录不存在"
+          echo "Report directory does not exist"
         fi
