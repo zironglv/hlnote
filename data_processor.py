@@ -96,6 +96,12 @@ class DataProcessor:
             )
             processed_df = processed_df.dropna(subset=['dividend_rate'])
         
+        # 添加PE列处理
+        if '市盈率2（计算用股本）P/E2' in processed_df.columns:
+            processed_df['pe_ratio'] = pd.to_numeric(
+                processed_df['市盈率2（计算用股本）P/E2'], errors='coerce'
+            )
+        
         # 按日期降序排序（最新日期在前）
         if 'date' in processed_df.columns:
             processed_df = processed_df.sort_values('date', ascending=False)  # 按时间降序排列，最新日期在前
@@ -131,6 +137,20 @@ class DataProcessor:
         metrics['max_15d'] = float(dividend_rates.max())
         metrics['min_15d'] = float(dividend_rates.min())
         metrics['std_15d'] = float(dividend_rates.std())
+        
+        # 计算PE指标（如果数据源包含）
+        if 'pe_ratio' in df.columns:
+            pe_values = df['pe_ratio'].replace([np.inf, -np.inf], np.nan).dropna()
+            if len(pe_values) > 0:
+                metrics['pe'] = float(pe_values.iloc[0])
+                metrics['pe_avg_15d'] = float(pe_values.mean())
+                # 计算PE历史分位数
+                pe_min = float(pe_values.min())
+                pe_max = float(pe_values.max())
+                if pe_max != pe_min:
+                    metrics['pe_percentile'] = float((metrics['pe'] - pe_min) / (pe_max - pe_min) * 100)
+                else:
+                    metrics['pe_percentile'] = 50.0
         
         # 趋势指标
         if len(dividend_rates) >= 2:
