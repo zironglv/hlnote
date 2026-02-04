@@ -304,7 +304,7 @@ class ReportGenerator:
                         <h3>💡 多指标综合分析</h3>
                         <ul>
                             <li>股息率分析：当前股息率相对15日均值{'偏高' if metrics.get('current_rate', 0) > metrics.get('avg_15d', 0) else '偏低'}，历史分位数为{metrics.get('percentile_15d', 0):.1f}%，处于{'较高' if metrics.get('percentile_15d', 50) > 70 else '较低' if metrics.get('percentile_15d', 50) < 30 else '中等'}水平</li>
-                            {'<li>估值分析：PE估值' + ('较低' if metrics.get('pe', 20) < 15 else '较高' if metrics.get('pe', 20) > 25 else '合理') + f'({metrics.get("pe", "N/A")}倍)，PB估值' + ('较低' if metrics.get('pb') and metrics.get('pb', 1.5) < 1.2 else '较高' if metrics.get('pb') and metrics.get('pb', 1.5) > 2.0 else '合理') + f'({metrics.get("pb", "N/A")}倍)</li>' if metrics.get('pe') or metrics.get('pb') else ''}
+                            {'<li>估值分析：PE估值' + ('较低' if metrics.get('pe', 20) < 15 else '较高' if metrics.get('pe', 20) > 25 else '合理') + f'({metrics.get("pe", "N/A")}倍)</li>' if metrics.get('pe') else ''}
                             {'<li>国债对比：股息率相对10年期国债收益率' + ('有显著优势' if metrics.get('dividend_bond_spread', 0) > 1.0 else '基本相当' if metrics.get('dividend_bond_spread', 0) > 0 else '处于劣势') + f'(差额{metrics.get("dividend_bond_spread", 0):.2f}%)</li>' if metrics.get('dividend_bond_spread') is not None else ''}
                         </ul>
                     </div>
@@ -458,9 +458,7 @@ class ReportGenerator:
                             <div class="metric-value">{metrics.get('pe', 'N/A') if metrics.get('pe') else 'N/A'}</div>
                             <div class="metric-label">PE估值</div>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-value">{metrics.get('pb', 'N/A') if metrics.get('pb') else 'N/A'}</div>
-                            <div class="metric-label">PB估值</div>
+                        
                         </div>
                         <div class="metric-card">
                             <div class="metric-value">{metrics.get('dividend_bond_spread', 'N/A') if metrics.get('dividend_bond_spread') else 'N/A'}%</div>

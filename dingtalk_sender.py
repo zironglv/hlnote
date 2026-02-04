@@ -152,9 +152,7 @@ class DingTalkSender:
                     'change_percent': change_percent,
                     'percentile_15d': percentile_15d,
                     'pe': data_metrics.get('pe'),
-                    'pb': data_metrics.get('pb'),
                     'pe_percentile': data_metrics.get('pe_percentile'),
-                    'pb_percentile': data_metrics.get('pb_percentile'),
                     'bond_yield': data_metrics.get('bond_yield'),
                     'dividend_bond_spread': data_metrics.get('dividend_bond_spread'),
                     'investment_advice': data_metrics.get('investment_advice')
@@ -347,23 +345,20 @@ class DingTalkSender:
                 change_percent = 0
         
         trend_arrow = '📈' if change_percent > 0 else '📉' if change_percent < 0 else '➡️'
-        
+
         # 获取估值数据
         pe = metrics.get('pe')
-        pb = metrics.get('pb')
         pe_percentile = metrics.get('pe_percentile')
-        pb_percentile = metrics.get('pb_percentile')
-        
+
         # 获取国债收益率对比数据
         bond_yield = metrics.get('bond_yield')
         dividend_bond_spread = metrics.get('dividend_bond_spread')
-        
+
         # 构建核心指标卡片
         core_metrics_section = f"""
 📊 **核心指标卡片**
 - 股息率: **{metrics.get('current_rate', 'N/A')}%** {trend_arrow} {metrics.get('change_percent', 'N/A')}%
 - PE估值: **{pe if pe is not None else 'N/A'}倍** {'(低位)' if pe_percentile and pe_percentile < 30 else '(高位)' if pe_percentile and pe_percentile > 70 else ''}
-- PB估值: **{pb if pb is not None else 'N/A'}倍** {'(低位)' if pb_percentile and pb_percentile < 30 else '(高位)' if pb_percentile and pb_percentile > 70 else ''}
 - 国债对比: **{dividend_bond_spread if dividend_bond_spread is not None else 'N/A'}%** {'📈' if dividend_bond_spread and dividend_bond_spread > 0 else '📉' if dividend_bond_spread and dividend_bond_spread < 0 else '➡️'}
 """
         

@@ -74,17 +74,15 @@ class MultiIndexAnalyzer:
                 'description': index_config.description
             }
             
-            # 3.5 获取估值数据（PE/PB）
+            # 3.5 获取估值数据（PE）
             try:
                 valuation_data = self.data_collector.fetch_valuation_data(index_config.code)
                 if valuation_data and valuation_data.get('pe'):
                     processed_data['metrics'].update({
                         'pe': valuation_data.get('pe'),
-                        'pb': valuation_data.get('pb'),
-                        'pe_percentile': valuation_data.get('pe_percentile', 50),
-                        'pb_percentile': valuation_data.get('pb_percentile', 50)
+                        'pe_percentile': valuation_data.get('pe_percentile', 50)
                     })
-                    logger.info(f"成功获取估值数据: PE={valuation_data.get('pe')}, PB={valuation_data.get('pb')}")
+                    logger.info(f"成功获取估值数据: PE={valuation_data.get('pe')}")
             except Exception as e:
                 logger.warning(f"获取估值数据失败: {str(e)}")
             

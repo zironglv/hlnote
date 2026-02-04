@@ -112,17 +112,17 @@ class DataCollector:
     
     def fetch_valuation_data(self, index_code: str) -> Dict[str, Any]:
         """
-        获取指数估值数据（PE/PB）
-        
+        获取指数估值数据（PE）
+
         Args:
             index_code: 指数代码
-            
+
         Returns:
-            Dict: 包含PE/PB估值数据的字典
+            Dict: 包含PE估值数据的字典
         """
         try:
             logger.info(f"开始获取指数 {index_code} 的估值数据")
-            
+
             # 使用AKShare获取指数估值数据
             # 注意：这个API只提供PE数据，不提供PB数据
             try:
@@ -130,14 +130,12 @@ class DataCollector:
             except:
                 # 如果失败，尝试使用6位代码
                 valuation_df = ak.stock_zh_index_value_csindex(symbol=str(index_code))
-            
+
             if valuation_df.empty:
                 logger.warning(f"未找到指数 {index_code} 的估值数据")
                 return {
                     'pe': None,
-                    'pb': None,
                     'pe_percentile': None,
-                    'pb_percentile': None,
                     'pe_history': [],
                     'pb_history': []
                 }
@@ -153,42 +151,27 @@ class DataCollector:
                 if pe_col in latest_data:
                     pe_value = float(latest_data[pe_col])
                     break
-            
-            for pb_col in ['pb', '市净率', 'PB']:
-                if pb_col in latest_data:
-                    pb_value = float(latest_data[pb_col])
-                    break
-            
+
             # 计算历史分位数（如果有历史数据）
             pe_percentile = None
-            pb_percentile = None
-            
+
             if 'pe' in valuation_df.columns and len(valuation_df) > 10:
                 current_pe = pe_value if pe_value else valuation_df['pe'].iloc[0]
                 pe_percentile = (valuation_df['pe'] <= current_pe).sum() / len(valuation_df) * 100
-                
-            if 'pb' in valuation_df.columns and len(valuation_df) > 10:
-                current_pb = pb_value if pb_value else valuation_df['pb'].iloc[0]
-                pb_percentile = (valuation_df['pb'] <= current_pb).sum() / len(valuation_df) * 100
-            
-            logger.info(f"指数 {index_code} 估值数据获取成功: PE={pe_value}, PB={pb_value}")
-            
+
+            logger.info(f"指数 {index_code} 估值数据获取成功: PE={pe_value}")
+
             return {
                 'pe': pe_value,
-                'pb': pb_value,
                 'pe_percentile': pe_percentile,
-                'pb_percentile': pb_percentile,
-                'pe_history': valuation_df['pe'].tolist()[:30] if 'pe' in valuation_df.columns else [],
-                'pb_history': valuation_df['pb'].tolist()[:30] if 'pb' in valuation_df.columns else []
+                'pe_history': valuation_df['pe'].tolist()[:30] if 'pe' in valuation_df.columns else []
             }
-            
+
         except Exception as e:
             logger.error(f"获取估值数据失败: {str(e)}")
             return {
                 'pe': None,
-                'pb': None,
                 'pe_percentile': None,
-                'pb_percentile': None,
                 'pe_history': [],
                 'pb_history': []
             }
