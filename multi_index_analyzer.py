@@ -262,11 +262,18 @@ class MultiIndexAnalyzer:
                     'description': f'包含 {len(index_names)} 个指数的综合分析'
                 }
                 
+                # 计算汇总指标
+                summary_metrics = {}
+                if analysis_results and analysis_results[0].success:
+                    # 使用第一个成功分析的指数数据作为汇总数据
+                    first_metrics = analysis_results[0].processed_data.get('metrics', {})
+                    summary_metrics = first_metrics.copy()
+                
                 self.dingtalk_sender.send_report(
                     summary_with_indices, 
                     None,
                     index_info=summary_index_info,
-                    processed_data={'metrics': {}}
+                    processed_data={'metrics': summary_metrics}
                 )
                 logger.info("总结报告发送成功")
             except Exception as e:

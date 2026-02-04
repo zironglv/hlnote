@@ -53,7 +53,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: investment-report-results
+        name: daily-reports
         path: |
           reports/
           *.log
