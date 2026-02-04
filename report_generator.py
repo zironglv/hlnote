@@ -105,6 +105,15 @@ class ReportGenerator:
             html_content = self.generate_html_report(analysis_data, chart_path, target_output_dir)
             
             logger.info("报告生成完成")
+            
+            # 保存HTML报告到文件
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                report_path = os.path.join(output_dir, 'index.html')
+                with open(report_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                logger.info(f"HTML报告已保存到: {report_path}")
+            
             return html_content, chart_path
             
         except Exception as e:
@@ -295,7 +304,7 @@ class ReportGenerator:
                         <h3>💡 多指标综合分析</h3>
                         <ul>
                             <li>股息率分析：当前股息率相对15日均值{'偏高' if metrics.get('current_rate', 0) > metrics.get('avg_15d', 0) else '偏低'}，历史分位数为{metrics.get('percentile_15d', 0):.1f}%，处于{'较高' if metrics.get('percentile_15d', 50) > 70 else '较低' if metrics.get('percentile_15d', 50) < 30 else '中等'}水平</li>
-                            {'<li>估值分析：PE估值' + ('较低' if metrics.get('pe', 20) < 15 else '较高' if metrics.get('pe', 20) > 25 else '合理') + f'({metrics.get("pe", "N/A")}倍)，PB估值' + ('较低' if metrics.get('pb', 1.5) < 1.2 else '较高' if metrics.get('pb', 1.5) > 2.0 else '合理') + f'({metrics.get("pb", "N/A")}倍)</li>' if metrics.get('pe') or metrics.get('pb') else ''}
+                            {'<li>估值分析：PE估值' + ('较低' if metrics.get('pe', 20) < 15 else '较高' if metrics.get('pe', 20) > 25 else '合理') + f'({metrics.get("pe", "N/A")}倍)，PB估值' + ('较低' if metrics.get('pb') and metrics.get('pb', 1.5) < 1.2 else '较高' if metrics.get('pb') and metrics.get('pb', 1.5) > 2.0 else '合理') + f'({metrics.get("pb", "N/A")}倍)</li>' if metrics.get('pe') or metrics.get('pb') else ''}
                             {'<li>国债对比：股息率相对10年期国债收益率' + ('有显著优势' if metrics.get('dividend_bond_spread', 0) > 1.0 else '基本相当' if metrics.get('dividend_bond_spread', 0) > 0 else '处于劣势') + f'(差额{metrics.get("dividend_bond_spread", 0):.2f}%)</li>' if metrics.get('dividend_bond_spread') is not None else ''}
                         </ul>
                     </div>

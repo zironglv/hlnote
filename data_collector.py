@@ -124,17 +124,12 @@ class DataCollector:
             logger.info(f"开始获取指数 {index_code} 的估值数据")
             
             # 使用AKShare获取指数估值数据
-            # 注意：这里可能需要根据实际指数代码调整
-            if index_code.startswith('sh') or index_code.startswith('sz'):
-                # 如果是股票代码格式，使用股票估值接口
-                valuation_df = ak.stock_a_indicator_lg(symbol=index_code)
-            else:
-                # 尝试使用指数估值接口
-                try:
-                    valuation_df = ak.index_value_hist_funddb(symbol=index_code)
-                except:
-                    # 如果失败，尝试其他接口
-                    valuation_df = ak.index_value_hist_cni(symbol=index_code)
+            # 注意：这个API只提供PE数据，不提供PB数据
+            try:
+                valuation_df = ak.stock_zh_index_value_csindex(symbol=index_code)
+            except:
+                # 如果失败，尝试使用6位代码
+                valuation_df = ak.stock_zh_index_value_csindex(symbol=str(index_code))
             
             if valuation_df.empty:
                 logger.warning(f"未找到指数 {index_code} 的估值数据")
@@ -154,7 +149,7 @@ class DataCollector:
             pe_value = None
             pb_value = None
             
-            for pe_col in ['pe_ttm', 'pe', '市盈率', 'PE']:
+            for pe_col in ['市盈率2', '市盈率1', 'pe', 'PE']:
                 if pe_col in latest_data:
                     pe_value = float(latest_data[pe_col])
                     break
@@ -223,30 +218,19 @@ class DataCollector:
                     'date': None
                 }
             
-            # 根据债券类型筛选数据
-            bond_mapping = {
+            # 映射债券类型到列名
+            yield_column_mapping = {
                 '10y': '10年',
-                '5y': '5年', 
+                '5y': '5年',
                 '1y': '1年'
             }
+            yield_column = yield_column_mapping.get(bond_type, '10年')
             
-            bond_name = bond_mapping.get(bond_type, '10年')
-            
-            # 检查列名，AKShare的列名可能有变化
-            column_name = None
-            for col in bond_yield_df.columns:
-                if '名称' in col or 'name' in col.lower():
-                    column_name = col
-                    break
-            
-            if column_name:
-                bond_data = bond_yield_df[bond_yield_df[column_name].astype(str).str.contains(bond_name)]
-            else:
-                # 如果没有找到名称列，使用第一列
-                bond_data = bond_yield_df[bond_yield_df.iloc[:, 0].astype(str).str.contains(bond_name)]
+            # 筛选国债收益率曲线
+            bond_data = bond_yield_df[bond_yield_df['曲线名称'].astype(str).str.contains('国债')]
             
             if bond_data.empty:
-                logger.warning(f"未找到{bond_name}国债收益率数据")
+                logger.warning(f"未找到国债收益率数据")
                 return {
                     'current_yield': None,
                     'yield_history': [],
@@ -254,49 +238,36 @@ class DataCollector:
                     'date': None
                 }
             
-            # 获取最新数据
-            latest_data = bond_data.iloc[0]
-            current_yield = float(latest_data['收益率'])
-            date_str = latest_data['日期']
+            # 获取最新收益率
+            latest_bond = bond_data.iloc[0]
+            current_yield = float(latest_bond[yield_column]) if pd.notna(latest_bond[yield_column]) else None
             
-            # 获取历史数据（最近30天）
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=30)
-            
-            # 尝试获取历史数据
-            try:
-                history_df = ak.bond_china_yield(start_date=start_date.strftime('%Y%m%d'), 
-                                                end_date=end_date.strftime('%Y%m%d'))
-                history_data = history_df[history_df['债券名称'].str.contains(bond_name)]
-                yield_history = history_data['收益率'].tolist() if not history_data.empty else []
-            except:
-                yield_history = []
-            
-            # 计算变化（如果有历史数据）
+            # 计算收益率变化
             yield_change = None
-            if len(yield_history) >= 2:
-                yield_change = current_yield - yield_history[1]
+            if len(bond_data) > 1:
+                previous_yield = float(bond_data.iloc[1][yield_column]) if pd.notna(bond_data.iloc[1][yield_column]) else None
+                if current_yield and previous_yield:
+                    yield_change = current_yield - previous_yield
             
-            logger.info(f"国债收益率数据获取成功: {bond_name}={current_yield}%")
+            date_str = latest_bond['日期'] if '日期' in latest_bond else None
+            
+            logger.info(f"成功获取国债收益率: {current_yield}%")
             
             return {
                 'current_yield': current_yield,
-                'yield_history': yield_history,
+                'yield_history': bond_data[yield_column].tolist()[:30] if yield_column in bond_data.columns else [],
                 'yield_change': yield_change,
-                'date': date_str,
-                'bond_name': bond_name
+                'date': date_str
             }
             
         except Exception as e:
-            logger.error(f"获取国债收益率数据失败: {str(e)}")
+            logger.warning(f"获取国债收益率失败: {str(e)}")
             return {
                 'current_yield': None,
                 'yield_history': [],
                 'yield_change': None,
-                'date': None,
-                'bond_name': bond_type
+                'date': None
             }
-    
     def validate_data(self, df: pd.DataFrame) -> bool:
         """
         验证数据完整性
