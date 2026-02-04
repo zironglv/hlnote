@@ -61,7 +61,6 @@ if chinese_fonts:
           echo "⚠️ 注意: DINGTALK_WEBHOOK 环境变量未设置"
         else
           echo "✅ DINGTALK_WEBHOOK 已配置（安全模式）"
-          # 不再显示敏感信息
         fi
         
     - name: 运行多指数AI投研助手
@@ -84,7 +83,6 @@ if chinese_fonts:
           echo "=== 详细错误日志 ==="
           cat execution_log.txt
         fi
-        # 不直接退出，让工作流继续执行以便收集日志
         
     - name: 检查报告目录是否存在
       run: |
@@ -142,7 +140,6 @@ if chinese_fonts:
         for logfile in *.log; do
           if [ -f "$logfile" ]; then
             echo "\n--- $logfile 内容 ---"
-            # 只显示最近50行，避免日志过长
             tail -n 50 "$logfile"
           fi
         done
@@ -150,7 +147,6 @@ if chinese_fonts:
           echo "\n--- 没有找到预期的日志文件 ---"
         fi
         
-        # 检查是否有报告文件生成
         echo "\n=== 检查报告文件 ==="
         if [ -d "reports" ]; then
           echo "报告目录存在:"
