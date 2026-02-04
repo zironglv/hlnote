@@ -87,20 +87,9 @@ def main():
         # 运行多指数分析
         logger.info("=== 开始多指数投研分析 ===")
         
-        # 临时禁用钉钉发送以测试主流程
-        print("⚠️ 临时禁用钉钉发送功能以测试主流程")
-        
-        # 模拟成功结果
-        class MockResult:
-            def __init__(self, success, code, name):
-                self.success = success
-                self.index_config = type('Config', (), {'code': code, 'name': name})()
-        
-        analysis_results = [
-            MockResult(True, 'H30269', '红利低波指数'),
-            MockResult(True, '930955', '红利低波100指数')
-        ]
-        send_results = {'H30269': False, '930955': False}
+        # 创建分析器并运行完整分析
+        analyzer = MultiIndexAnalyzer(dingtalk_webhook=dingtalk_webhook)
+        analysis_results, send_results = analyzer.run_full_analysis()
         
         # 输出结果统计
         success_count = sum(1 for r in analysis_results if r.success)
