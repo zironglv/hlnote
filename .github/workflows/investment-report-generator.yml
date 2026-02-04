@@ -28,14 +28,25 @@ jobs:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
         echo "🚀 Starting investment report generation..."
-        python main_multi.py
+        echo "=== 调试信息 ==="
+        echo "Python版本:"
+        python --version
+        echo "当前目录文件:"
+        ls -la
+        echo "环境变量DINGTALK_WEBHOOK长度: ${#DINGTALK_WEBHOOK}"
+        echo "=== 运行主程序 ==="
+        python main_multi.py 2>&1 | tee run_output.log
         REPORT_EXIT_CODE=$?
+        echo "=== 运行结果 ==="
         echo "Report generation exit code: $REPORT_EXIT_CODE"
+        echo "日志文件内容:"
+        cat multi_index_dividend_analyzer.log 2>/dev/null || echo "日志文件不存在或为空"
+        echo "运行输出:"
+        cat run_output.log 2>/dev/null || echo "运行输出文件不存在"
         if [ $REPORT_EXIT_CODE -eq 0 ]; then
           echo "✅ Report generation completed successfully"
         else
           echo "⚠️ Report generation completed with warnings (exit code: $REPORT_EXIT_CODE)"
-          # 即使有错误也继续执行，因为我们想要生成报告
         fi
         
     - name: Upload artifacts
