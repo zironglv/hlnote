@@ -73,7 +73,7 @@ if chinese_fonts:
         
         # 启用详细错误捕获
         set -x  # 显示执行的每条命令
-        python main_multi_fixed.py 2>&1 | tee execution_log.txt
+        python main_multi.py 2>&1 | tee execution_log.txt
         EXIT_CODE=${PIPESTATUS[0]}
         set +x
         echo "程序退出码: $EXIT_CODE"
