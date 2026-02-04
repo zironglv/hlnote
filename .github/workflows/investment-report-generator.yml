@@ -28,8 +28,7 @@ jobs:
         DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
       run: |
         echo "🚀 Starting investment report generation..."
-        echo "🔍 使用极简测试版本验证钉钉功能..."
-        python test_dingtalk.py
+        python main_multi.py
         REPORT_EXIT_CODE=$?
         echo "Report generation exit code: $REPORT_EXIT_CODE"
         if [ $REPORT_EXIT_CODE -eq 0 ]; then
