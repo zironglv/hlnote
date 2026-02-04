@@ -415,7 +415,7 @@ class DingTalkSender:
 {advice_section}
 
 🔗 **查看更多**
-📊 [完整分析报告](https://zironglv.github.io/hlnote/) | 📈 [历史数据](https://zironglv.github.io/hlnote/)
+📊 [完整分析报告](https://zironglv.github.io/hlnote/reports/{index_code}/index.html) | 📈 [历史数据](https://zironglv.github.io/hlnote/)
 
 ---
 📈 *AI投研助手自动推送* | 数据仅供参考，投资有风险

@@ -74,6 +74,35 @@ class MultiIndexAnalyzer:
                 'description': index_config.description
             }
             
+            # 3.5 获取估值数据（PE/PB）
+            try:
+                valuation_data = self.data_collector.fetch_valuation_data(index_config.code)
+                if valuation_data and valuation_data.get('pe'):
+                    processed_data['metrics'].update({
+                        'pe': valuation_data.get('pe'),
+                        'pb': valuation_data.get('pb'),
+                        'pe_percentile': valuation_data.get('pe_percentile', 50),
+                        'pb_percentile': valuation_data.get('pb_percentile', 50)
+                    })
+                    logger.info(f"成功获取估值数据: PE={valuation_data.get('pe')}, PB={valuation_data.get('pb')}")
+            except Exception as e:
+                logger.warning(f"获取估值数据失败: {str(e)}")
+            
+            # 3.6 获取国债收益率数据
+            try:
+                bond_yield = self.data_collector.fetch_bond_yield()
+                if bond_yield:
+                    processed_data['metrics']['bond_yield'] = bond_yield.get('current_yield')
+                    processed_data['metrics']['bond_yield_change'] = bond_yield.get('yield_change')
+                    # 计算股息率与国债收益率的差值
+                    if processed_data['metrics'].get('current_rate') and bond_yield.get('current_yield'):
+                        processed_data['metrics']['dividend_bond_spread'] = (
+                            processed_data['metrics']['current_rate'] - bond_yield.get('current_yield')
+                        )
+                    logger.info(f"成功获取国债收益率: {bond_yield.get('current_yield')}%")
+            except Exception as e:
+                logger.warning(f"获取国债收益率失败: {str(e)}")
+            
             # 4. 报告生成
             report_html, chart_path = self.report_generator.generate_report(
                 processed_data, 
