@@ -1,0 +1,42 @@
+name: Simple Test Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  simple-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas requests
+        
+    - name: Run simple test
+      run: |
+        echo "🚀 Starting simple test..."
+        python simple_test.py
+        TEST_EXIT_CODE=$?
+        echo "Simple test exit code: $TEST_EXIT_CODE"
+        if [ $TEST_EXIT_CODE -eq 0 ]; then
+          echo "✅ Simple test completed successfully"
+        else
+          echo "❌ Simple test failed with exit code: $TEST_EXIT_CODE"
+        fi
+        
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: simple-test-results
+        path: test_reports/
+        if-no-files-found: ignore
