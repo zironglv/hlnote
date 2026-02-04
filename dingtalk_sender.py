@@ -54,7 +54,9 @@ class DingTalkSender:
             return success
             
         except Exception as e:
+            import traceback
             logger.error(f"钉钉消息发送过程中发生错误: {str(e)}")
+            logger.error(f"错误堆栈: {traceback.format_exc()}")
             return False
     
     def _build_dingtalk_message(self, html_content: str, chart_path: str = None, index_info: dict = None, processed_data: dict = None) -> dict:

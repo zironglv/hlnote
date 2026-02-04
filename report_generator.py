@@ -442,7 +442,7 @@ class ReportGenerator:
                 <div class="content">
                     <div class="metrics-grid">
                         <div class="metric-card">
-                            <div class="metric-value">{metrics.get('current_rate', 0):.2f}% {trend_arrow}</div>
+                            <div class="metric-value">{float(metrics.get('current_rate', 0)):.2f}% {trend_arrow}</div>
                             <div class="metric-label">股息率</div>
                         </div>
                         <div class="metric-card">
