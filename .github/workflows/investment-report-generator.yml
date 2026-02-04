@@ -1,0 +1,48 @@
+name: Investment Report Generator
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 23 * * *'
+
+jobs:
+  generate-investment-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas requests matplotlib openpyxl
+        
+    - name: Run investment report generator
+      env:
+        DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
+      run: |
+        echo "🚀 Starting investment report generation..."
+        python main_multi.py
+        REPORT_EXIT_CODE=$?
+        echo "Report generation exit code: $REPORT_EXIT_CODE"
+        if [ $REPORT_EXIT_CODE -ne 0 ]; then
+          echo "❌ Report generation failed"
+          exit $REPORT_EXIT_CODE
+        fi
+        echo "✅ Report generation completed successfully"
+        
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: investment-report-results
+        path: |
+          reports/
+          *.log
+        if-no-files-found: ignore
