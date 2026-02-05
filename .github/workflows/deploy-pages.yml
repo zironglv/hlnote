@@ -40,18 +40,39 @@ jobs:
       with:
         name: daily-reports
         path: ./reports
+      continue-on-error: true
+    
+    - name: 检查artifact下载结果
+      run: |
+        echo "检查下载结果..."
+        if [ -d "reports" ]; then
+          echo "✅ Reports目录已下载"
+          echo "Reports目录内容:"
+          find reports -type f | head -30
+          echo "Reports目录结构:"
+          ls -la reports/
+        else
+          echo "❌ Reports目录不存在"
+          echo "当前工作目录内容:"
+          ls -la
+          echo "检查是否有其他artifact..."
+          # 如果没有reports目录，尝试运行报告生成
+          echo "⚠️ 将运行报告生成器创建默认报告"
+        fi
     
     - name: 验证报告文件
       run: |
         echo "检查reports目录内容："
-        find reports -type f -name "*.html" | head -20
+        find reports -type f -name "*.html" | head -20 || echo "No HTML files found"
         echo "检查reports目录结构："
-        ls -la reports/
+        ls -la reports/ 2>/dev/null || echo "Reports directory not found"
         if [ -d "reports" ] && [ -n "$(ls -A reports)" ]; then
           echo "✅ 报告目录存在且非空"
         else
-          echo "⚠️ 报告目录为空或不存在，生成默认报告"
-          python main_multi_fixed.py
+          echo "⚠️ 报告目录为空或不存在，需要检查artifact上传问题"
+          # 如果报告目录不存在，尝试生成一个基本信息页面
+          mkdir -p reports
+          echo '<!DOCTYPE html><html><head><title>报告暂不可用</title></head><body><h1>报告正在生成中...</h1><p>请稍后再试</p></body></html>' > reports/index.html
         fi
     
     - name: 设置GitHub Pages

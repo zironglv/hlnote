@@ -51,6 +51,15 @@ jobs:
           echo "⚠️ Report generation completed with warnings (exit code: $REPORT_EXIT_CODE)"
         fi
         
+        # 确保reports目录存在
+        if [ -d "reports" ]; then
+          echo "✅ Reports目录存在"
+          echo "Reports目录内容:"
+          find reports -type f | head -20
+        else
+          echo "❌ Reports目录不存在"
+        fi
+        
     - name: Upload artifacts
       if: always()
       uses: actions/upload-artifact@v4
