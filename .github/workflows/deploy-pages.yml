@@ -2,7 +2,7 @@ name: 部署决策报告到GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["AI投研助手 - 多指数每日报告"]
+    workflows: ["Investment Report Generator"]  # 修复：使用实际的工作流名称
     types:
       - completed
 
@@ -84,7 +84,6 @@ jobs:
         echo "具体报告文件："
         if [ -d "reports" ]; then
           find reports -name "*.html" -type f | while read file; do
-            filename=$(basename "$file")
-            echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/$filename"
+            echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/$file"
           done
         fi
