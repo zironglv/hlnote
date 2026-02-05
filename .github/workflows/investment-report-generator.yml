@@ -35,7 +35,7 @@ jobs:
         ls -la
         echo "环境变量DINGTALK_WEBHOOK长度: ${#DINGTALK_WEBHOOK}"
         echo "=== 运行主程序 ==="
-        python main_multi.py 2>&1 | tee run_output.log
+        python main_multi_fixed.py 2>&1 | tee run_output.log
         REPORT_EXIT_CODE=$?
         echo "=== 运行结果 ==="
         echo "Report generation exit code: $REPORT_EXIT_CODE"
@@ -45,6 +45,8 @@ jobs:
         cat run_output.log 2>/dev/null || echo "运行输出文件不存在"
         if [ $REPORT_EXIT_CODE -eq 0 ]; then
           echo "✅ Report generation completed successfully"
+          echo "✅ 检查生成的报告文件:"
+          find reports -name "index.html" -type f | head -10
         else
           echo "⚠️ Report generation completed with warnings (exit code: $REPORT_EXIT_CODE)"
         fi
