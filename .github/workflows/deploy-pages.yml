@@ -35,45 +35,66 @@ jobs:
         pip install -r requirements.txt
         pip install xlrd>=2.0.1
     
-    - name: 下载生成的报告
-      uses: actions/download-artifact@v4
-      with:
-        name: daily-reports
-        path: ./reports
-      continue-on-error: true
-    
-    - name: 检查artifact下载结果
+    - name: 尝试下载artifact或生成报告
       run: |
-        echo "检查下载结果..."
-        if [ -d "reports" ]; then
-          echo "✅ Reports目录已下载"
-          echo "Reports目录内容:"
-          find reports -type f | head -30
-          echo "Reports目录结构:"
-          ls -la reports/
+        echo "尝试下载artifact..."
+        # 尝试下载artifact
+        if gh run download ${{ github.event.workflow_run.id }} -n daily-reports -D ./reports 2>/dev/null; then
+          echo "✅ 成功下载artifact"
         else
-          echo "❌ Reports目录不存在"
-          echo "当前工作目录内容:"
-          ls -la
-          echo "检查是否有其他artifact..."
-          # 如果没有reports目录，尝试运行报告生成
-          echo "⚠️ 将运行报告生成器创建默认报告"
+          echo "❌ 无法下载artifact，可能的原因:"
+          echo "  1. Investment Report Generator 工作流未运行"
+          echo "  2. Artifact上传失败"
+          echo "  3. Artifact已过期"
+          echo "  4. 工作流名称不匹配"
+          echo ""
+          echo "将直接在部署工作流中生成报告..."
+          
+          # 安装依赖
+          echo "安装依赖..."
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install xlrd>=2.0.1
+          
+          # 生成报告
+          echo "生成投资报告..."
+          python main_multi_fixed.py
+          
+          if [ -d "reports" ]; then
+            echo "✅ 报告生成成功"
+          else
+            echo "❌ 报告生成失败，创建默认页面"
+            mkdir -p reports
+            cat > reports/index.html << 'EOF'
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <title>AI投研助手</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 2rem; background: #f5f7fa; }
+                .container { max-width: 800px; margin: 0 auto; background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                h1 { color: #2E86AB; }
+                .error { color: #d73a49; padding: 1rem; background: #ffeef0; border-radius: 5px; margin: 1rem 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>📈 AI投研助手</h1>
+                <div class="error">
+                  <strong>报告生成遇到问题</strong><br>
+                  请检查GitHub Actions工作流日志以获取详细信息。
+                </div>
+                <p>工作流运行ID: ${{ github.event.workflow_run.id }}</p>
+                <p>仓库: ${{ github.repository }}</p>
+              </div>
+            </body>
+            </html>
+            EOF
+          fi
         fi
-    
-    - name: 验证报告文件
-      run: |
-        echo "检查reports目录内容："
-        find reports -type f -name "*.html" | head -20 || echo "No HTML files found"
-        echo "检查reports目录结构："
-        ls -la reports/ 2>/dev/null || echo "Reports directory not found"
-        if [ -d "reports" ] && [ -n "$(ls -A reports)" ]; then
-          echo "✅ 报告目录存在且非空"
-        else
-          echo "⚠️ 报告目录为空或不存在，需要检查artifact上传问题"
-          # 如果报告目录不存在，尝试生成一个基本信息页面
-          mkdir -p reports
-          echo '<!DOCTYPE html><html><head><title>报告暂不可用</title></head><body><h1>报告正在生成中...</h1><p>请稍后再试</p></body></html>' > reports/index.html
-        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: 设置GitHub Pages
       uses: actions/configure-pages@v4
