@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI投研助手 - 报告中心</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        .header {
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            color: #2E86AB;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            color: #666;
+            font-size: 1.2rem;
+        }
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
+        .report-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+        }
+        .report-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2E86AB;
+            margin-bottom: 0.5rem;
+        }
+        .report-desc {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            background: #2E86AB;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+        .btn:hover {
+            background: #1f5f7a;
+            text-decoration: none;
+        }
+        .last-updated {
+            margin-top: 2rem;
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 AI投研助手</h1>
+            <p>专业投资分析报告中心</p>
+        </div>
+        
+        <div class="reports-grid">
+            <a href="./reports/H30269/index.html" class="report-card">
+                <div class="report-title">红利低波指数 (H30269)</div>
+                <div class="report-desc">中证红利低波指数投资分析报告</div>
+                <div class="btn">查看报告</div>
+            </a>
+            
+            <a href="./reports/930955/index.html" class="report-card">
+                <div class="report-title">红利低波100指数 (930955)</div>
+                <div class="report-desc">中证红利低波100指数投资分析报告</div>
+                <div class="btn">查看报告</div>
+            </a>
+        </div>
+        
+        <div class="last-updated">
+            报告实时更新 | 数据来源：中证指数公司
+        </div>
+    </div>
+</body>
+</html>
